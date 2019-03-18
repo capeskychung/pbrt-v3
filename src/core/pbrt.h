@@ -30,6 +30,7 @@
 
  */
 
+// _MSC_VER是微软C/C++编译器的宏定义，用来定义当前微软公司自己的编译器的主版本。
 #if defined(_MSC_VER)
 #define NOMINMAX
 #pragma once
@@ -60,14 +61,14 @@
 #include <string.h>
 #include <glog/logging.h>
 
-// Platform-specific definitions
+// 针对各平台的定义
 #if defined(_WIN32) || defined(_WIN64)
   #define PBRT_IS_WINDOWS
 #endif
 
 #if defined(_MSC_VER)
   #define PBRT_IS_MSVC
-  #if _MSC_VER == 1800
+  #if _MSC_VER == 1800 // 即Visual C++ 2013
     #define snprintf _snprintf
   #endif
 #endif
@@ -93,99 +94,99 @@
 namespace pbrt {
 
 // Global Forward Declarations
-class Scene;
-class Integrator;
-class SamplerIntegrator;
+class Scene; // 场景
+class Integrator; // 积分器
+class SamplerIntegrator; // 采样积分器
 template <typename T>
-class Vector2;
+class Vector2; // 矢量
 template <typename T>
 class Vector3;
 template <typename T>
-class Point3;
+class Point3; // 点
 template <typename T>
 class Point2;
 template <typename T>
-class Normal3;
-class Ray;
-class RayDifferential;
+class Normal3; // 法线
+class Ray; // 射线
+class RayDifferential; // 射线微分
 template <typename T>
-class Bounds2;
+class Bounds2; // 绑定
 template <typename T>
 class Bounds3;
-class Transform;
-struct Interaction;
-class SurfaceInteraction;
-class Shape;
-class Primitive;
-class GeometricPrimitive;
-class TransformedPrimitive;
+class Transform; // 变换
+struct Interaction; // 相交
+class SurfaceInteraction; // 表面相交
+class Shape; // 形状
+class Primitive; // 图元
+class GeometricPrimitive; // 几何图元
+class TransformedPrimitive; // 变换图元
 template <int nSpectrumSamples>
-class CoefficientSpectrum;
-class RGBSpectrum;
-class SampledSpectrum;
+class CoefficientSpectrum; // 系数光谱
+class RGBSpectrum; // RGB光谱
+class SampledSpectrum; // 简单光谱
 #ifdef PBRT_SAMPLED_SPECTRUM
   typedef SampledSpectrum Spectrum;
 #else
   typedef RGBSpectrum Spectrum;
 #endif
-class Camera;
-struct CameraSample;
-class ProjectiveCamera;
-class Sampler;
-class Filter;
-class Film;
-class FilmTile;
-class BxDF;
-class BRDF;
-class BTDF;
-class BSDF;
-class Material;
+class Camera; // 相机
+struct CameraSample; // 相机采样
+class ProjectiveCamera; // 投影相机
+class Sampler; // 采样器
+class Filter; // 滤波器
+class Film; // 图片相关
+class FilmTile; // 图片块
+class BxDF; // 双向分布函数
+class BRDF; // 双向反射分布函数
+class BTDF; // 双向投射分布函数
+class BSDF; // 双向散射分布函数
+class Material; // 材质
 template <typename T>
-class Texture;
-class Medium;
-class MediumInteraction;
-struct MediumInterface;
-class BSSRDF;
-class SeparableBSSRDF;
-class TabulatedBSSRDF;
-struct BSSRDFTable;
-class Light;
-class VisibilityTester;
-class AreaLight;
-struct Distribution1D;
-class Distribution2D;
+class Texture; // 纹理
+class Medium; // 介质
+class MediumInteraction; // 介质相交
+struct MediumInterface; // 介质表面
+class BSSRDF; // 双向散射表面反射分布函数
+class SeparableBSSRDF; // 可分离BSSRDF
+class TabulatedBSSRDF; // 列表BSSRDF
+struct BSSRDFTable; // BSSRDF表
+class Light; // 光源
+class VisibilityTester; // 可见测试器
+class AreaLight; // 区域光源
+struct Distribution1D; // 一维分布
+class Distribution2D; // 二维分布
 #ifdef PBRT_FLOAT_AS_DOUBLE
   typedef double Float;
 #else
   typedef float Float;
 #endif  // PBRT_FLOAT_AS_DOUBLE
-class RNG;
-class ProgressReporter;
-class MemoryArena;
+class RNG; // 随机数产生器
+class ProgressReporter; // 进度报告器
+class MemoryArena; // 存储分配场地
 template <typename T, int logBlockSize = 2>
-class BlockedArray;
-struct Matrix4x4;
-class ParamSet;
+class BlockedArray; // 
+struct Matrix4x4; // 4x4矩阵
+class ParamSet; // 变量集合
 template <typename T>
-struct ParamSetItem;
-struct Options {
+struct ParamSetItem; // 变量集合项
+struct Options { // 参数
     Options() {
         cropWindow[0][0] = 0;
         cropWindow[0][1] = 1;
         cropWindow[1][0] = 0;
         cropWindow[1][1] = 1;
     }
-    int nThreads = 0;
-    bool quickRender = false;
-    bool quiet = false;
+    int nThreads = 0; // 线程数
+    bool quickRender = false; // 快速渲染模式
+    bool quiet = false; // 安静渲染模式
     bool cat = false, toPly = false;
-    std::string imageFile;
+    std::string imageFile; // 图片名称
     // x0, x1, y0, y1
-    Float cropWindow[2][2];
+    Float cropWindow[2][2]; // 裁剪
 };
 
 extern Options PbrtOptions;
-class TextureParams;
+class TextureParams; // 纹理变量
 
 // Global Constants
 #ifdef _MSC_VER
@@ -213,7 +214,7 @@ static PBRT_CONSTEXPR Float Sqrt2 = 1.41421356237309504880;
 #define alloca _alloca
 #endif
 
-// Global Inline Functions
+// 内联函数，浮点数与位存储方式的转换
 inline uint32_t FloatToBits(float f) {
     uint32_t ui;
     memcpy(&ui, &f, sizeof(float));
