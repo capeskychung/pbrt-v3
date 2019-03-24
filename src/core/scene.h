@@ -46,37 +46,38 @@
 
 namespace pbrt {
 
-// Scene Declarations
+// Scene 声明
 class Scene {
   public:
-    // Scene Public Methods
+    // Scene 公有方法
     Scene(std::shared_ptr<Primitive> aggregate,
           const std::vector<std::shared_ptr<Light>> &lights)
         : lights(lights), aggregate(aggregate) {
-        // Scene Constructor Implementation
-        worldBound = aggregate->WorldBound();
+        // Scene 构造函数实现
+        worldBound = aggregate->WorldBound(); // 生成包围盒
         for (const auto &light : lights) {
-            light->Preprocess(*this);
-            if (light->flags & (int)LightFlags::Infinite)
+            light->Preprocess(*this); // light根据场景进行预处理
+            if (light->flags & (int)LightFlags::Infinite) // 讲infinite光源添加到单独的vector中
                 infiniteLights.push_back(light);
         }
     }
-    const Bounds3f &WorldBound() const { return worldBound; }
-    bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
+    const Bounds3f &WorldBound() const { return worldBound; } // 获取包围盒
+    // 光线与场景求交，如果相交，返回true，并用SurfaceInteraction返回距离最近的相交信息
+    bool Intersect(const Ray &ray, SurfaceInteraction *isect) const; 
+    // 光线与场景求交，如果相交，返回true，但不计算相交信息，所以更快
     bool IntersectP(const Ray &ray) const;
     bool IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
                      Spectrum *transmittance) const;
 
-    // Scene Public Data
-    std::vector<std::shared_ptr<Light>> lights;
-    // Store infinite light sources separately for cases where we only want
-    // to loop over them.
-    std::vector<std::shared_ptr<Light>> infiniteLights;
+    // Scene 公有数据
+    std::vector<std::shared_ptr<Light>> lights; // 光源
+    // 额外再存储infinite光源，以便单独操作
+    std::vector<std::shared_ptr<Light>> infiniteLights; // 无限光源
 
   private:
-    // Scene Private Data
-    std::shared_ptr<Primitive> aggregate;
-    Bounds3f worldBound;
+    // Scene 私有数据
+    std::shared_ptr<Primitive> aggregate; // 图元集合
+    Bounds3f worldBound; // 包围盒
 };
 
 }  // namespace pbrt

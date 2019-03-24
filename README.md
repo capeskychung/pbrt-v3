@@ -6,7 +6,7 @@ pbrt, Version 3
 
 This repository holds the source code to the version of pbrt that is
 described in the third edition of *Physically Based Rendering: From
-Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel
+Theory to Implementation*, by [Matt Pharr](http://pharr.org/matt), [Wenzel 
 Jakob](http://www.mitsuba-renderer.org/~wenzel/), and Greg Humphreys.  As
 before, the code is available under the BSD license.
 

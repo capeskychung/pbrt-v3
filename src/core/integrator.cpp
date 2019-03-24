@@ -47,10 +47,10 @@ namespace pbrt {
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
-// Integrator Method Definitions
+// Integrator 方法定义
 Integrator::~Integrator() {}
 
-// Integrator Utility Functions
+// Integrator 实用函数
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 MemoryArena &arena, Sampler &sampler,
                                 const std::vector<int> &nLightSamples,
@@ -224,26 +224,27 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
         new Distribution1D(&lightPower[0], lightPower.size()));
 }
 
-// SamplerIntegrator Method Definitions
+// SamplerIntegrator 方法定义
 void SamplerIntegrator::Render(const Scene &scene) {
-    Preprocess(scene, *sampler);
-    // Render image tiles in parallel
+    Preprocess(scene, *sampler); // 预处理
+    // 并行渲染图像块
 
-    // Compute number of tiles, _nTiles_, to use for parallel rendering
+    // 计算图像块的数量 _nTiles_, 用于并行渲染
     Bounds2i sampleBounds = camera->film->GetSampleBounds();
-    Vector2i sampleExtent = sampleBounds.Diagonal();
-    const int tileSize = 16;
+    Vector2i sampleExtent = sampleBounds.Diagonal(); // 采样范围的长宽
+    const int tileSize = 16; // 每个图像块长宽16像素
+    // 计算长宽各有多少块
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
-    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
+    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering"); // 进度汇报器
     {
         ParallelFor2D([&](Point2i tile) {
-            // Render section of image corresponding to _tile_
+            // 渲染对应的图像块
 
-            // Allocate _MemoryArena_ for tile
+            // 为图像块配置内存池
             MemoryArena arena;
 
-            // Get sampler instance for tile
+            // 获得采样器实例
             int seed = tile.y * nTiles.x + tile.x;
             std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
 

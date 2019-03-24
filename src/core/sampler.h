@@ -46,10 +46,10 @@
 
 namespace pbrt {
 
-// Sampler Declarations
+// Sampler 声明
 class Sampler {
   public:
-    // Sampler Interface
+    // Sampler 接口
     virtual ~Sampler();
     Sampler(int64_t samplesPerPixel);
     virtual void StartPixel(const Point2i &p);
@@ -70,11 +70,11 @@ class Sampler {
     }
     int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
 
-    // Sampler Public Data
+    // Sampler 公有数据
     const int64_t samplesPerPixel;
 
   protected:
-    // Sampler Protected Data
+    // Sampler 受保护数据
     Point2i currentPixel;
     int64_t currentPixelSampleIndex;
     std::vector<int> samples1DArraySizes, samples2DArraySizes;
@@ -82,13 +82,13 @@ class Sampler {
     std::vector<std::vector<Point2f>> sampleArray2D;
 
   private:
-    // Sampler Private Data
+    // Sampler 私有数据
     size_t array1DOffset, array2DOffset;
 };
 
 class PixelSampler : public Sampler {
   public:
-    // PixelSampler Public Methods
+    // PixelSampler 公有方法
     PixelSampler(int64_t samplesPerPixel, int nSampledDimensions);
     bool StartNextSample();
     bool SetSampleNumber(int64_t);
@@ -96,7 +96,7 @@ class PixelSampler : public Sampler {
     Point2f Get2D();
 
   protected:
-    // PixelSampler Protected Data
+    // PixelSampler 受保护数据
     std::vector<std::vector<Float>> samples1D;
     std::vector<std::vector<Point2f>> samples2D;
     int current1DDimension = 0, current2DDimension = 0;
@@ -105,7 +105,7 @@ class PixelSampler : public Sampler {
 
 class GlobalSampler : public Sampler {
   public:
-    // GlobalSampler Public Methods
+    // GlobalSampler 公有方法
     bool StartNextSample();
     void StartPixel(const Point2i &);
     bool SetSampleNumber(int64_t sampleNum);
@@ -116,7 +116,7 @@ class GlobalSampler : public Sampler {
     virtual Float SampleDimension(int64_t index, int dimension) const = 0;
 
   private:
-    // GlobalSampler Private Data
+    // GlobalSampler 私有数据
     int dimension;
     int64_t intervalSampleIndex;
     static const int arrayStartDim = 5;

@@ -49,12 +49,12 @@
 
 namespace pbrt {
 
-// Integrator Declarations
+// Integrator 声明
 class Integrator {
   public:
-    // Integrator Interface
-    virtual ~Integrator();
-    virtual void Render(const Scene &scene) = 0;
+    // Integrator 接口
+    virtual ~Integrator(); // 虚析构函数
+    virtual void Render(const Scene &scene) = 0; // 纯虚函数
 };
 
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
@@ -73,15 +73,15 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene);
 
-// SamplerIntegrator Declarations
+// SamplerIntegrator 声明
 class SamplerIntegrator : public Integrator {
   public:
-    // SamplerIntegrator Public Methods
+    // SamplerIntegrator 公有方法
     SamplerIntegrator(std::shared_ptr<const Camera> camera,
                       std::shared_ptr<Sampler> sampler,
                       const Bounds2i &pixelBounds)
         : camera(camera), sampler(sampler), pixelBounds(pixelBounds) {}
-    virtual void Preprocess(const Scene &scene, Sampler &sampler) {}
+    virtual void Preprocess(const Scene &scene, Sampler &sampler) {} // 预处理，可选择性实现
     void Render(const Scene &scene);
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
                         Sampler &sampler, MemoryArena &arena,
@@ -96,13 +96,13 @@ class SamplerIntegrator : public Integrator {
                               MemoryArena &arena, int depth) const;
 
   protected:
-    // SamplerIntegrator Protected Data
-    std::shared_ptr<const Camera> camera;
+    // SamplerIntegrator 受保护数据
+    std::shared_ptr<const Camera> camera; // 相机
 
   private:
-    // SamplerIntegrator Private Data
-    std::shared_ptr<Sampler> sampler;
-    const Bounds2i pixelBounds;
+    // SamplerIntegrator 私有数据
+    std::shared_ptr<Sampler> sampler; // 采样器
+    const Bounds2i pixelBounds; // 包围盒，平面，int型
 };
 
 }  // namespace pbrt
