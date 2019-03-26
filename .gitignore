@@ -2,6 +2,8 @@
 src/build
 src/bin
 src/objs
+other_scenes
 .sconsign.dblite
 build
 .vscode
+.DS_Store

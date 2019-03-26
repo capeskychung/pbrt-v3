@@ -317,12 +317,13 @@ void SamplerIntegrator::Render(const Scene &scene)
 
                     do
                     {
-                        // Initialize _CameraSample_ for current sample
+                        // 初始化CameraSample，它存储了当前在film平面上的采样点，以便于生成采样光线；
+                        // 存储了采样时间，用于模拟运动物体；存储了镜片位置，用于模拟光圈虚化。
                         CameraSample cameraSample = tileSampler->GetCameraSample(pixel);
 
-                        // Generate camera ray for current sample
+                        // 为当前采样点生成采样光线，RayDifferential包含一组光线，用于纹理抗锯齿
                         RayDifferential ray;
-                        Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray);
+                        Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray); // rayWeight为权重
                         ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
                         ++nCameraRays;
 
@@ -331,8 +332,8 @@ void SamplerIntegrator::Render(const Scene &scene)
                         if (rayWeight > 0)
                             L = Li(ray, scene, *tileSampler, arena);
 
-                        // Issue warning if unexpected radiance value returned
-                        if (L.HasNaNs())
+                        // 如果采样结果错误，输出警告
+                        if (L.HasNaNs()) // 采样结果不是数字
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Not-a-number radiance value returned "
@@ -341,7 +342,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                                 (int)tileSampler->CurrentSampleNumber());
                             L = Spectrum(0.f);
                         }
-                        else if (L.y() < -1e-5)
+                        else if (L.y() < -1e-5) // 采样结果为负
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Negative luminance value, %f, returned "
@@ -350,7 +351,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                                 (int)tileSampler->CurrentSampleNumber());
                             L = Spectrum(0.f);
                         }
-                        else if (std::isinf(L.y()))
+                        else if (std::isinf(L.y())) // 采样结果无穷大
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Infinite luminance value returned "
@@ -361,11 +362,10 @@ void SamplerIntegrator::Render(const Scene &scene)
                         }
                         VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " << ray << " -> L = " << L;
 
-                        // Add camera ray's contribution to image
+                        // 添加采样光线对图像的贡献
                         filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
 
-                        // Free _MemoryArena_ memory from computing image sample
-                        // value
+                        // 释放内存池
                         arena.Reset();
                     } while (tileSampler->StartNextSample());
                 }
