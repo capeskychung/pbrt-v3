@@ -46,10 +46,10 @@
 
 namespace pbrt {
 
-// Camera Declarations
+// Camera 声明
 class Camera {
   public:
-    // Camera Interface
+    // Camera 接口
     Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
            Float shutterClose, Film *film, const Medium *medium);
     virtual ~Camera();
@@ -62,9 +62,9 @@ class Camera {
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
 
-    // Camera Public Data
-    AnimatedTransform CameraToWorld;
-    const Float shutterOpen, shutterClose;
+    // Camera 公有数据
+    AnimatedTransform CameraToWorld; // 相机坐标系到世界坐标系的变换矩阵
+    const Float shutterOpen, shutterClose; // 快门
     Film *film;
     const Medium *medium;
 };

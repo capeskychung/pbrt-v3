@@ -59,7 +59,7 @@ Camera::Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
 
 Float Camera::GenerateRayDifferential(const CameraSample &sample,
                                       RayDifferential *rd) const {
-    Float wt = GenerateRay(sample, rd);
+    Float wt = GenerateRay(sample, rd); // 生成光线
     if (wt == 0) return 0;
 
     // Find camera ray after shifting a fraction of a pixel in the $x$ direction

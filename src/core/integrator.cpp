@@ -267,10 +267,9 @@ void SamplerIntegrator::Render(const Scene &scene)
     // 并行渲染图像块
 
     // 计算图像块的数量 _nTiles_, 用于并行渲染
-    Bounds2i sampleBounds =
-        camera->film->GetSampleBounds();             // sampleBounds表示采样范围的边界
-    Vector2i sampleExtent = sampleBounds.Diagonal(); // 采样范围的长宽
-    const int tileSize = 16;                         // 每个图像块长宽16像素
+    Bounds2i sampleBounds = camera->film->GetSampleBounds(); // sampleBounds表示采样范围的边界
+    Vector2i sampleExtent = sampleBounds.Diagonal();         // 采样范围的长宽
+    const int tileSize = 16;                                 // 每个图像块长宽16像素
     // 计算长宽各有多少块
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
@@ -321,7 +320,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                         // 存储了采样时间，用于模拟运动物体；存储了镜片位置，用于模拟光圈虚化。
                         CameraSample cameraSample = tileSampler->GetCameraSample(pixel);
 
-                        // 为当前采样点生成采样光线，RayDifferential包含一组光线，用于纹理抗锯齿
+                        // 为当前采样点生成采样光线，RayDifferential相比Ray多了两条光线，它们分别在x方向和y方向上偏移一些，用于纹理抗锯齿
                         RayDifferential ray;
                         Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray); // rayWeight为权重
                         ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
@@ -333,7 +332,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                             L = Li(ray, scene, *tileSampler, arena);
 
                         // 如果采样结果错误，输出警告
-                        if (L.HasNaNs()) // 采样结果不是数字
+                        if (L.HasNaNs()) // 如果采样结果不是数字
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Not-a-number radiance value returned "
@@ -342,7 +341,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                                 (int)tileSampler->CurrentSampleNumber());
                             L = Spectrum(0.f);
                         }
-                        else if (L.y() < -1e-5) // 采样结果为负
+                        else if (L.y() < -1e-5) // 如果采样结果为负
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Negative luminance value, %f, returned "
@@ -351,7 +350,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                                 (int)tileSampler->CurrentSampleNumber());
                             L = Spectrum(0.f);
                         }
-                        else if (std::isinf(L.y())) // 采样结果无穷大
+                        else if (std::isinf(L.y())) // 如果采样结果无穷大
                         {
                             LOG(ERROR) << StringPrintf(
                                 "Infinite luminance value returned "
