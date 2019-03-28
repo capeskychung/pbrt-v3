@@ -210,6 +210,7 @@ class Vector3
     Vector3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
     bool HasNaNs() const { return isNaN(x) || isNaN(y) || isNaN(z); }
     explicit Vector3(const Point3<T> &p);
+    explicit Vector3(const Normal3<T> &n);
 #ifndef NDEBUG
     // The default versions of these are fine for release builds; for debug
     // we define them so that we can add the Assert checks.
@@ -299,7 +300,6 @@ class Vector3
     Vector3<T> operator-() const { return Vector3<T>(-x, -y, -z); } // 负号
     Float LengthSquared() const { return x * x + y * y + z * z; }   // 长度的平方
     Float Length() const { return std::sqrt(LengthSquared()); }     // 长度
-    explicit Vector3(const Normal3<T> &n);
 
     // Vector3 公有数据
     T x, y, z;
@@ -927,7 +927,7 @@ class Bounds3
     }
 
     const Point3<T> &operator[](int i) const; // 下标，返回左值
-    Point3<T> &operator[](int i); // 下标，返回左值
+    Point3<T> &operator[](int i);             // 下标，返回左值
 
     bool operator==(const Bounds3<T> &b) const // 比较是否相等
     {
@@ -1028,12 +1028,12 @@ class Bounds2iIterator : public std::forward_iterator_tag
   public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)
         : p(pt), bounds(&b) {}
-    Bounds2iIterator operator++()
+    Bounds2iIterator operator++() // 前置++，返回操作之后的值
     {
         advance();
         return *this;
     }
-    Bounds2iIterator operator++(int)
+    Bounds2iIterator operator++(int) // 后置++，接受一个不被使用int类型的参数。返回操作之前的值
     {
         Bounds2iIterator old = *this;
         advance();
@@ -1083,11 +1083,11 @@ class Ray
     }
 
     // Ray 公有数据
-    Point3f o;          // 原点
-    Vector3f d;         // 方向
-    mutable Float tMax; // 最大值
-    Float time;
-    const Medium *medium;
+    Point3f o;            // 原点
+    Vector3f d;           // 方向
+    mutable Float tMax;   // 最大值
+    Float time;           // 时间
+    const Medium *medium; // 介质
 };
 
 class RayDifferential : public Ray
@@ -1129,7 +1129,7 @@ class RayDifferential : public Ray
     Vector3f rxDirection, ryDirection;
 };
 
-// Geometry Inline Functions
+// Geometry 内联函数
 template <typename T>
 inline Vector3<T>::Vector3(const Point3<T> &p)
     : x(p.x), y(p.y), z(p.z)
@@ -1137,33 +1137,41 @@ inline Vector3<T>::Vector3(const Point3<T> &p)
     DCHECK(!HasNaNs());
 }
 
+template <typename T>
+inline Vector3<T>::Vector3(const Normal3<T> &n)
+    : x(n.x), y(n.y), z(n.z)
+{
+    DCHECK(!n.HasNaNs());
+}
+
 template <typename T, typename U>
-inline Vector3<T> operator*(U s, const Vector3<T> &v)
+inline Vector3<T> operator*(U s, const Vector3<T> &v) // 乘以，全局运算符重载
 {
     return v * s;
 }
+
 template <typename T>
-Vector3<T> Abs(const Vector3<T> &v)
+Vector3<T> Abs(const Vector3<T> &v) // 绝对值
 {
     return Vector3<T>(std::abs(v.x), std::abs(v.y), std::abs(v.z));
 }
 
 template <typename T>
-inline T Dot(const Vector3<T> &v1, const Vector3<T> &v2)
+inline T Dot(const Vector3<T> &v1, const Vector3<T> &v2) // Vector3点乘
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 template <typename T>
-inline T AbsDot(const Vector3<T> &v1, const Vector3<T> &v2)
+inline T AbsDot(const Vector3<T> &v1, const Vector3<T> &v2) // Vector3点乘的绝对值
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return std::abs(Dot(v1, v2));
 }
 
 template <typename T>
-inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2)
+inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2) // Vector3叉乘
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
@@ -1173,7 +1181,7 @@ inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2)
 }
 
 template <typename T>
-inline Vector3<T> Cross(const Vector3<T> &v1, const Normal3<T> &v2)
+inline Vector3<T> Cross(const Vector3<T> &v1, const Normal3<T> &v2) // Vector3叉乘Normal3
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
@@ -1183,7 +1191,7 @@ inline Vector3<T> Cross(const Vector3<T> &v1, const Normal3<T> &v2)
 }
 
 template <typename T>
-inline Vector3<T> Cross(const Normal3<T> &v1, const Vector3<T> &v2)
+inline Vector3<T> Cross(const Normal3<T> &v1, const Vector3<T> &v2) // Normal3叉乘Vector3
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
@@ -1193,51 +1201,49 @@ inline Vector3<T> Cross(const Normal3<T> &v1, const Vector3<T> &v2)
 }
 
 template <typename T>
-inline Vector3<T> Normalize(const Vector3<T> &v)
+inline Vector3<T> Normalize(const Vector3<T> &v) // 归一化
 {
     return v / v.Length();
 }
+
 template <typename T>
-T MinComponent(const Vector3<T> &v)
+T MinComponent(const Vector3<T> &v) // 最小值
 {
     return std::min(v.x, std::min(v.y, v.z));
 }
 
 template <typename T>
-T MaxComponent(const Vector3<T> &v)
+T MaxComponent(const Vector3<T> &v) // 最大值
 {
     return std::max(v.x, std::max(v.y, v.z));
 }
 
 template <typename T>
-int MaxDimension(const Vector3<T> &v)
+int MaxDimension(const Vector3<T> &v) // 最大值对应的轴向
 {
     return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) : ((v.y > v.z) ? 1 : 2);
 }
 
 template <typename T>
-Vector3<T> Min(const Vector3<T> &p1, const Vector3<T> &p2)
+Vector3<T> Min(const Vector3<T> &p1, const Vector3<T> &p2) // 两个Vector3的最小值
 {
-    return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
-                      std::min(p1.z, p2.z));
+    return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
 }
 
 template <typename T>
-Vector3<T> Max(const Vector3<T> &p1, const Vector3<T> &p2)
+Vector3<T> Max(const Vector3<T> &p1, const Vector3<T> &p2) // 两个Vector3的最大值
 {
-    return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
-                      std::max(p1.z, p2.z));
+    return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
 }
 
 template <typename T>
-Vector3<T> Permute(const Vector3<T> &v, int x, int y, int z)
+Vector3<T> Permute(const Vector3<T> &v, int x, int y, int z) // 重置顺序
 {
     return Vector3<T>(v[x], v[y], v[z]);
 }
 
 template <typename T>
-inline void CoordinateSystem(const Vector3<T> &v1, Vector3<T> *v2,
-                             Vector3<T> *v3)
+inline void CoordinateSystem(const Vector3<T> &v1, Vector3<T> *v2, Vector3<T> *v3) // 坐标系统转换
 {
     if (std::abs(v1.x) > std::abs(v1.y))
         *v2 = Vector3<T>(-v1.z, 0, v1.x) / std::sqrt(v1.x * v1.x + v1.z * v1.z);
@@ -1261,49 +1267,50 @@ Vector2<T>::Vector2(const Point3<T> &p)
 }
 
 template <typename T, typename U>
-inline Vector2<T> operator*(U f, const Vector2<T> &v)
+inline Vector2<T> operator*(U f, const Vector2<T> &v) // 乘以，全局运算符重载
 {
     return v * f;
 }
 template <typename T>
-inline Float Dot(const Vector2<T> &v1, const Vector2<T> &v2)
+inline Float Dot(const Vector2<T> &v1, const Vector2<T> &v2) // 点乘
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return v1.x * v2.x + v1.y * v2.y;
 }
 
 template <typename T>
-inline Float AbsDot(const Vector2<T> &v1, const Vector2<T> &v2)
+inline Float AbsDot(const Vector2<T> &v1, const Vector2<T> &v2) // 点乘后求绝对值
 {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
     return std::abs(Dot(v1, v2));
 }
 
 template <typename T>
-inline Vector2<T> Normalize(const Vector2<T> &v)
+inline Vector2<T> Normalize(const Vector2<T> &v) // 归一化
 {
     return v / v.Length();
 }
+
 template <typename T>
-Vector2<T> Abs(const Vector2<T> &v)
+Vector2<T> Abs(const Vector2<T> &v) // 绝对值
 {
     return Vector2<T>(std::abs(v.x), std::abs(v.y));
 }
 
 template <typename T>
-inline Float Distance(const Point3<T> &p1, const Point3<T> &p2) // 求距离
+inline Float Distance(const Point3<T> &p1, const Point3<T> &p2) // 距离
 {
     return (p1 - p2).Length();
 }
 
 template <typename T>
-inline Float DistanceSquared(const Point3<T> &p1, const Point3<T> &p2)
+inline Float DistanceSquared(const Point3<T> &p1, const Point3<T> &p2) // 距离的平方
 {
     return (p1 - p2).LengthSquared();
 }
 
 template <typename T, typename U>
-inline Point3<T> operator*(U f, const Point3<T> &p)
+inline Point3<T> operator*(U f, const Point3<T> &p) // 乘以，全局运算符重载
 {
     DCHECK(!p.HasNaNs());
     return p * f;
@@ -1316,64 +1323,62 @@ Point3<T> Lerp(Float t, const Point3<T> &p0, const Point3<T> &p1) // 插值
 }
 
 template <typename T>
-Point3<T> Min(const Point3<T> &p1, const Point3<T> &p2)
+Point3<T> Min(const Point3<T> &p1, const Point3<T> &p2) // 最小值
 {
-    return Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
-                     std::min(p1.z, p2.z));
+    return Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
 }
 
 template <typename T>
-Point3<T> Max(const Point3<T> &p1, const Point3<T> &p2)
+Point3<T> Max(const Point3<T> &p1, const Point3<T> &p2) // 最大值
 {
-    return Point3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y),
-                     std::max(p1.z, p2.z));
+    return Point3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
 }
 
 template <typename T>
-Point3<T> Floor(const Point3<T> &p)
+Point3<T> Floor(const Point3<T> &p) // 向下取整
 {
     return Point3<T>(std::floor(p.x), std::floor(p.y), std::floor(p.z));
 }
 
 template <typename T>
-Point3<T> Ceil(const Point3<T> &p)
+Point3<T> Ceil(const Point3<T> &p) // 向上取整
 {
     return Point3<T>(std::ceil(p.x), std::ceil(p.y), std::ceil(p.z));
 }
 
 template <typename T>
-Point3<T> Abs(const Point3<T> &p)
+Point3<T> Abs(const Point3<T> &p) // 绝对值
 {
     return Point3<T>(std::abs(p.x), std::abs(p.y), std::abs(p.z));
 }
 
 template <typename T>
-inline Float Distance(const Point2<T> &p1, const Point2<T> &p2) // 求距离
+inline Float Distance(const Point2<T> &p1, const Point2<T> &p2) // 距离
 {
     return (p1 - p2).Length();
 }
 
 template <typename T>
-inline Float DistanceSquared(const Point2<T> &p1, const Point2<T> &p2)
+inline Float DistanceSquared(const Point2<T> &p1, const Point2<T> &p2) // 距离的平方
 {
     return (p1 - p2).LengthSquared();
 }
 
 template <typename T, typename U>
-inline Point2<T> operator*(U f, const Point2<T> &p)
+inline Point2<T> operator*(U f, const Point2<T> &p) // 乘以，全局运算符重载
 {
     DCHECK(!p.HasNaNs());
     return p * f;
 }
 
 template <typename T>
-Point2<T> Floor(const Point2<T> &p)
+Point2<T> Floor(const Point2<T> &p) // 向下取整
 {
     return Point2<T>(std::floor(p.x), std::floor(p.y));
 }
 
 template <typename T>
-Point2<T> Ceil(const Point2<T> &p)
+Point2<T> Ceil(const Point2<T> &p) // 向上取整
 {
     return Point2<T>(std::ceil(p.x), std::ceil(p.y));
 }
@@ -1385,86 +1390,79 @@ Point2<T> Lerp(Float t, const Point2<T> &v0, const Point2<T> &v1) // 插值
 }
 
 template <typename T>
-Point2<T> Min(const Point2<T> &pa, const Point2<T> &pb)
+Point2<T> Min(const Point2<T> &pa, const Point2<T> &pb) // 最小值
 {
     return Point2<T>(std::min(pa.x, pb.x), std::min(pa.y, pb.y));
 }
 
 template <typename T>
-Point2<T> Max(const Point2<T> &pa, const Point2<T> &pb)
+Point2<T> Max(const Point2<T> &pa, const Point2<T> &pb) // 最大值
 {
     return Point2<T>(std::max(pa.x, pb.x), std::max(pa.y, pb.y));
 }
 
 template <typename T>
-Point3<T> Permute(const Point3<T> &p, int x, int y, int z)
+Point3<T> Permute(const Point3<T> &p, int x, int y, int z) // 重置顺序
 {
     return Point3<T>(p[x], p[y], p[z]);
 }
 
 template <typename T, typename U>
-inline Normal3<T> operator*(U f, const Normal3<T> &n)
+inline Normal3<T> operator*(U f, const Normal3<T> &n) // 乘以，全局运算符重载
 {
     return Normal3<T>(f * n.x, f * n.y, f * n.z);
 }
 
 template <typename T>
-inline Normal3<T> Normalize(const Normal3<T> &n)
+inline Normal3<T> Normalize(const Normal3<T> &n) // 归一化
 {
     return n / n.Length();
 }
 
 template <typename T>
-inline Vector3<T>::Vector3(const Normal3<T> &n)
-    : x(n.x), y(n.y), z(n.z)
-{
-    DCHECK(!n.HasNaNs());
-}
-
-template <typename T>
-inline T Dot(const Normal3<T> &n1, const Vector3<T> &v2)
+inline T Dot(const Normal3<T> &n1, const Vector3<T> &v2) // Normal3点乘Vector3
 {
     DCHECK(!n1.HasNaNs() && !v2.HasNaNs());
     return n1.x * v2.x + n1.y * v2.y + n1.z * v2.z;
 }
 
 template <typename T>
-inline T Dot(const Vector3<T> &v1, const Normal3<T> &n2)
+inline T Dot(const Vector3<T> &v1, const Normal3<T> &n2) // Vector3点乘Normal3
 {
     DCHECK(!v1.HasNaNs() && !n2.HasNaNs());
     return v1.x * n2.x + v1.y * n2.y + v1.z * n2.z;
 }
 
 template <typename T>
-inline T Dot(const Normal3<T> &n1, const Normal3<T> &n2)
+inline T Dot(const Normal3<T> &n1, const Normal3<T> &n2) // Normal3点乘Normal3
 {
     DCHECK(!n1.HasNaNs() && !n2.HasNaNs());
     return n1.x * n2.x + n1.y * n2.y + n1.z * n2.z;
 }
 
 template <typename T>
-inline T AbsDot(const Normal3<T> &n1, const Vector3<T> &v2)
+inline T AbsDot(const Normal3<T> &n1, const Vector3<T> &v2) // Normal3点乘Vector3的绝对值
 {
     DCHECK(!n1.HasNaNs() && !v2.HasNaNs());
     return std::abs(n1.x * v2.x + n1.y * v2.y + n1.z * v2.z);
 }
 
 template <typename T>
-inline T AbsDot(const Vector3<T> &v1, const Normal3<T> &n2)
+inline T AbsDot(const Vector3<T> &v1, const Normal3<T> &n2) // Vector3点乘Normal3的绝对值
 {
     DCHECK(!v1.HasNaNs() && !n2.HasNaNs());
     return std::abs(v1.x * n2.x + v1.y * n2.y + v1.z * n2.z);
 }
 
 template <typename T>
-inline T AbsDot(const Normal3<T> &n1, const Normal3<T> &n2)
+inline T AbsDot(const Normal3<T> &n1, const Normal3<T> &n2) // Normal3点乘Normal3的绝对值
 {
     DCHECK(!n1.HasNaNs() && !n2.HasNaNs());
     return std::abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
 }
 
 template <typename T>
-inline Normal3<T> Faceforward(const Normal3<T> &n, const Vector3<T> &v)
+inline Normal3<T> Faceforward(const Normal3<T> &n, const Vector3<T> &v) // 若n与v夹角大于90，则n反向
 {
     return (Dot(n, v) < 0.f) ? -n : n;
 }
@@ -1488,27 +1486,27 @@ inline Vector3<T> Faceforward(const Vector3<T> &v, const Normal3<T> &n2)
 }
 
 template <typename T>
-Normal3<T> Abs(const Normal3<T> &v)
+Normal3<T> Abs(const Normal3<T> &v) // 绝对值
 {
     return Normal3<T>(std::abs(v.x), std::abs(v.y), std::abs(v.z));
 }
 
 template <typename T>
-inline const Point3<T> &Bounds3<T>::operator[](int i) const
+inline const Point3<T> &Bounds3<T>::operator[](int i) const // 下标
 {
     DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
 }
 
 template <typename T>
-inline Point3<T> &Bounds3<T>::operator[](int i)
+inline Point3<T> &Bounds3<T>::operator[](int i) // 下标
 {
     DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
 }
 
 template <typename T>
-Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p)
+Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p) // Bounds3和Point3合并，得到更大的Bounds3
 {
     Bounds3<T> ret;
     ret.pMin = Min(b.pMin, p);
@@ -1517,7 +1515,7 @@ Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p)
 }
 
 template <typename T>
-Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2)
+Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2) // Bounds3合并
 {
     Bounds3<T> ret;
     ret.pMin = Min(b1.pMin, b2.pMin);
@@ -1526,7 +1524,7 @@ Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2)
 }
 
 template <typename T>
-Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2)
+Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2) // Bounds3交集，得到更小的Bounds3
 {
     // Important: assign to pMin/pMax directly and don't run the Bounds2()
     // constructor, since it takes min/max of the points passed to it.  In
@@ -1539,7 +1537,7 @@ Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2)
 }
 
 template <typename T>
-bool Overlaps(const Bounds3<T> &b1, const Bounds3<T> &b2)
+bool Overlaps(const Bounds3<T> &b1, const Bounds3<T> &b2) // 检查是否重叠
 {
     bool x = (b1.pMax.x >= b2.pMin.x) && (b1.pMin.x <= b2.pMax.x);
     bool y = (b1.pMax.y >= b2.pMin.y) && (b1.pMin.y <= b2.pMax.y);
@@ -1548,28 +1546,29 @@ bool Overlaps(const Bounds3<T> &b1, const Bounds3<T> &b2)
 }
 
 template <typename T>
-bool Inside(const Point3<T> &p, const Bounds3<T> &b) // p点是否在b中
+bool Inside(const Point3<T> &p, const Bounds3<T> &b) // 检查p点是否在b中
 {
-    return (p.x >= b.pMin.x && p.x <= b.pMax.x && p.y >= b.pMin.y &&
-            p.y <= b.pMax.y && p.z >= b.pMin.z && p.z <= b.pMax.z);
+    return (p.x >= b.pMin.x && p.x <= b.pMax.x &&
+            p.y >= b.pMin.y && p.y <= b.pMax.y &&
+            p.z >= b.pMin.z && p.z <= b.pMax.z);
 }
 
 template <typename T>
-bool InsideExclusive(const Point3<T> &p, const Bounds3<T> &b)
+bool InsideExclusive(const Point3<T> &p, const Bounds3<T> &b) // 检查p点是否在b中，前闭后开
 {
-    return (p.x >= b.pMin.x && p.x < b.pMax.x && p.y >= b.pMin.y &&
-            p.y < b.pMax.y && p.z >= b.pMin.z && p.z < b.pMax.z);
+    return (p.x >= b.pMin.x && p.x < b.pMax.x &&
+            p.y >= b.pMin.y && p.y < b.pMax.y &&
+            p.z >= b.pMin.z && p.z < b.pMax.z);
 }
 
 template <typename T, typename U>
-inline Bounds3<T> Expand(const Bounds3<T> &b, U delta)
+inline Bounds3<T> Expand(const Bounds3<T> &b, U delta) // 沿边界扩展delta的宽度
 {
     return Bounds3<T>(b.pMin - Vector3<T>(delta, delta, delta),
                       b.pMax + Vector3<T>(delta, delta, delta));
 }
 
-// Minimum squared distance from point to box; returns zero if point is
-// inside.
+// 点到Bounds3的最小距离的平方，如果点在里面，则返回零
 template <typename T, typename U>
 inline Float DistanceSquared(const Point3<T> &p, const Bounds3<U> &b)
 {
@@ -1579,6 +1578,7 @@ inline Float DistanceSquared(const Point3<T> &p, const Bounds3<U> &b)
     return dx * dx + dy * dy + dz * dz;
 }
 
+// 点到Bounds3的最小距离，如果点在里面，则返回零
 template <typename T, typename U>
 inline Float Distance(const Point3<T> &p, const Bounds3<U> &b)
 {
@@ -1604,7 +1604,7 @@ inline Bounds2iIterator end(const Bounds2i &b)
 }
 
 template <typename T>
-Bounds2<T> Union(const Bounds2<T> &b, const Point2<T> &p)
+Bounds2<T> Union(const Bounds2<T> &b, const Point2<T> &p) // Bounds2与Point2合并
 {
     Bounds2<T> ret;
     ret.pMin = Min(b.pMin, p);
@@ -1613,7 +1613,7 @@ Bounds2<T> Union(const Bounds2<T> &b, const Point2<T> &p)
 }
 
 template <typename T>
-Bounds2<T> Union(const Bounds2<T> &b, const Bounds2<T> &b2)
+Bounds2<T> Union(const Bounds2<T> &b, const Bounds2<T> &b2) // Bounds2合并
 {
     Bounds2<T> ret;
     ret.pMin = Min(b.pMin, b2.pMin);
@@ -1622,7 +1622,7 @@ Bounds2<T> Union(const Bounds2<T> &b, const Bounds2<T> &b2)
 }
 
 template <typename T>
-Bounds2<T> Intersect(const Bounds2<T> &b1, const Bounds2<T> &b2)
+Bounds2<T> Intersect(const Bounds2<T> &b1, const Bounds2<T> &b2) // 求交集
 {
     // Important: assign to pMin/pMax directly and don't run the Bounds2()
     // constructor, since it takes min/max of the points passed to it.  In
@@ -1635,7 +1635,7 @@ Bounds2<T> Intersect(const Bounds2<T> &b1, const Bounds2<T> &b2)
 }
 
 template <typename T>
-bool Overlaps(const Bounds2<T> &ba, const Bounds2<T> &bb)
+bool Overlaps(const Bounds2<T> &ba, const Bounds2<T> &bb) // 检查是否重叠
 {
     bool x = (ba.pMax.x >= bb.pMin.x) && (ba.pMin.x <= bb.pMax.x);
     bool y = (ba.pMax.y >= bb.pMin.y) && (ba.pMin.y <= bb.pMax.y);
@@ -1645,27 +1645,27 @@ bool Overlaps(const Bounds2<T> &ba, const Bounds2<T> &bb)
 template <typename T>
 bool Inside(const Point2<T> &pt, const Bounds2<T> &b) // p点是否在b中
 {
-    return (pt.x >= b.pMin.x && pt.x <= b.pMax.x && pt.y >= b.pMin.y &&
-            pt.y <= b.pMax.y);
+    return (pt.x >= b.pMin.x && pt.x <= b.pMax.x &&
+            pt.y >= b.pMin.y && pt.y <= b.pMax.y);
 }
 
 template <typename T>
-bool InsideExclusive(const Point2<T> &pt, const Bounds2<T> &b)
+bool InsideExclusive(const Point2<T> &pt, const Bounds2<T> &b) // p点是否在b中，前闭后开
 {
-    return (pt.x >= b.pMin.x && pt.x < b.pMax.x && pt.y >= b.pMin.y &&
-            pt.y < b.pMax.y);
+    return (pt.x >= b.pMin.x && pt.x < b.pMax.x &&
+            pt.y >= b.pMin.y && pt.y < b.pMax.y);
 }
 
 template <typename T, typename U>
-Bounds2<T> Expand(const Bounds2<T> &b, U delta)
+Bounds2<T> Expand(const Bounds2<T> &b, U delta) // 边界扩展delta宽度
 {
     return Bounds2<T>(b.pMin - Vector2<T>(delta, delta),
                       b.pMax + Vector2<T>(delta, delta));
 }
 
+// 射线求交
 template <typename T>
-inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
-                                   Float *hitt1) const
+inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0, Float *hitt1) const
 {
     Float t0 = 0, t1 = ray.tMax;
     for (int i = 0; i < 3; ++i)
