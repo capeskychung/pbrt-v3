@@ -30,30 +30,33 @@
 
  */
 
-
 // core/transform.cpp*
 #include "transform.h"
 #include "interaction.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
-// Matrix4x4 Method Definitions
-bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0,
-                          Float *x1) {
+// Matrix4x4 方法定义
+bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0, Float *x1)
+{
     Float det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
-    if (std::abs(det) < 1e-10f) return false;
+    if (std::abs(det) < 1e-10f)
+        return false;
     *x0 = (A[1][1] * B[0] - A[0][1] * B[1]) / det;
     *x1 = (A[0][0] * B[1] - A[1][0] * B[0]) / det;
-    if (std::isnan(*x0) || std::isnan(*x1)) return false;
+    if (std::isnan(*x0) || std::isnan(*x1))
+        return false;
     return true;
 }
 
 Matrix4x4::Matrix4x4(Float mat[4][4]) { memcpy(m, mat, 16 * sizeof(Float)); }
 
-Matrix4x4::Matrix4x4(Float t00, Float t01, Float t02, Float t03, Float t10,
-                     Float t11, Float t12, Float t13, Float t20, Float t21,
-                     Float t22, Float t23, Float t30, Float t31, Float t32,
-                     Float t33) {
+Matrix4x4::Matrix4x4(Float t00, Float t01, Float t02, Float t03,
+                     Float t10, Float t11, Float t12, Float t13,
+                     Float t20, Float t21, Float t22, Float t23,
+                     Float t30, Float t31, Float t32, Float t33)
+{
     m[0][0] = t00;
     m[0][1] = t01;
     m[0][2] = t02;
@@ -72,62 +75,80 @@ Matrix4x4::Matrix4x4(Float t00, Float t01, Float t02, Float t03, Float t10,
     m[3][3] = t33;
 }
 
-Matrix4x4 Transpose(const Matrix4x4 &m) {
-    return Matrix4x4(m.m[0][0], m.m[1][0], m.m[2][0], m.m[3][0], m.m[0][1],
-                     m.m[1][1], m.m[2][1], m.m[3][1], m.m[0][2], m.m[1][2],
-                     m.m[2][2], m.m[3][2], m.m[0][3], m.m[1][3], m.m[2][3],
-                     m.m[3][3]);
+Matrix4x4 Transpose(const Matrix4x4 &m) // 矩阵转置
+{
+    return Matrix4x4(m.m[0][0], m.m[1][0], m.m[2][0], m.m[3][0],
+                     m.m[0][1], m.m[1][1], m.m[2][1], m.m[3][1],
+                     m.m[0][2], m.m[1][2], m.m[2][2], m.m[3][2],
+                     m.m[0][3], m.m[1][3], m.m[2][3], m.m[3][3]);
 }
 
-Matrix4x4 Inverse(const Matrix4x4 &m) {
+Matrix4x4 Inverse(const Matrix4x4 &m) // 逆矩阵
+{
     int indxc[4], indxr[4];
     int ipiv[4] = {0, 0, 0, 0};
     Float minv[4][4];
     memcpy(minv, m.m, 4 * 4 * sizeof(Float));
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++)
+    {
         int irow = 0, icol = 0;
         Float big = 0.f;
         // Choose pivot
-        for (int j = 0; j < 4; j++) {
-            if (ipiv[j] != 1) {
-                for (int k = 0; k < 4; k++) {
-                    if (ipiv[k] == 0) {
-                        if (std::abs(minv[j][k]) >= big) {
+        for (int j = 0; j < 4; j++)
+        {
+            if (ipiv[j] != 1)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    if (ipiv[k] == 0)
+                    {
+                        if (std::abs(minv[j][k]) >= big)
+                        {
                             big = Float(std::abs(minv[j][k]));
                             irow = j;
                             icol = k;
                         }
-                    } else if (ipiv[k] > 1)
+                    }
+                    else if (ipiv[k] > 1)
                         Error("Singular matrix in MatrixInvert");
                 }
             }
         }
         ++ipiv[icol];
         // Swap rows _irow_ and _icol_ for pivot
-        if (irow != icol) {
-            for (int k = 0; k < 4; ++k) std::swap(minv[irow][k], minv[icol][k]);
+        if (irow != icol)
+        {
+            for (int k = 0; k < 4; ++k)
+                std::swap(minv[irow][k], minv[icol][k]);
         }
         indxr[i] = irow;
         indxc[i] = icol;
-        if (minv[icol][icol] == 0.f) Error("Singular matrix in MatrixInvert");
+        if (minv[icol][icol] == 0.f)
+            Error("Singular matrix in MatrixInvert");
 
         // Set $m[icol][icol]$ to one by scaling row _icol_ appropriately
         Float pivinv = 1. / minv[icol][icol];
         minv[icol][icol] = 1.;
-        for (int j = 0; j < 4; j++) minv[icol][j] *= pivinv;
+        for (int j = 0; j < 4; j++)
+            minv[icol][j] *= pivinv;
 
         // Subtract this row from others to zero out their columns
-        for (int j = 0; j < 4; j++) {
-            if (j != icol) {
+        for (int j = 0; j < 4; j++)
+        {
+            if (j != icol)
+            {
                 Float save = minv[j][icol];
                 minv[j][icol] = 0;
-                for (int k = 0; k < 4; k++) minv[j][k] -= minv[icol][k] * save;
+                for (int k = 0; k < 4; k++)
+                    minv[j][k] -= minv[icol][k] * save;
             }
         }
     }
     // Swap columns to reflect permutation
-    for (int j = 3; j >= 0; j--) {
-        if (indxr[j] != indxc[j]) {
+    for (int j = 3; j >= 0; j--)
+    {
+        if (indxr[j] != indxc[j])
+        {
             for (int k = 0; k < 4; k++)
                 std::swap(minv[k][indxr[j]], minv[k][indxc[j]]);
         }
@@ -138,21 +159,28 @@ Matrix4x4 Inverse(const Matrix4x4 &m) {
 // Transform Method Definitions
 void Transform::Print(FILE *f) const { m.Print(f); }
 
-Transform Translate(const Vector3f &delta) {
-    Matrix4x4 m(1, 0, 0, delta.x, 0, 1, 0, delta.y, 0, 0, 1, delta.z, 0, 0, 0,
-                1);
-    Matrix4x4 minv(1, 0, 0, -delta.x, 0, 1, 0, -delta.y, 0, 0, 1, -delta.z, 0,
-                   0, 0, 1);
+Transform Translate(const Vector3f &delta)
+{
+    Matrix4x4 m(1, 0, 0, delta.x,
+                0, 1, 0, delta.y,
+                0, 0, 1, delta.z,
+                0, 0, 0, 1);
+    Matrix4x4 minv(1, 0, 0, -delta.x,
+                   0, 1, 0, -delta.y,
+                   0, 0, 1, -delta.z,
+                   0, 0, 0, 1);
     return Transform(m, minv);
 }
 
-Transform Scale(Float x, Float y, Float z) {
+Transform Scale(Float x, Float y, Float z)
+{
     Matrix4x4 m(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
     Matrix4x4 minv(1 / x, 0, 0, 0, 0, 1 / y, 0, 0, 0, 0, 1 / z, 0, 0, 0, 0, 1);
     return Transform(m, minv);
 }
 
-Transform RotateX(Float theta) {
+Transform RotateX(Float theta)
+{
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(1, 0, 0, 0, 0, cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0,
@@ -160,7 +188,8 @@ Transform RotateX(Float theta) {
     return Transform(m, Transpose(m));
 }
 
-Transform RotateY(Float theta) {
+Transform RotateY(Float theta)
+{
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(cosTheta, 0, sinTheta, 0, 0, 1, 0, 0, -sinTheta, 0, cosTheta, 0,
@@ -168,7 +197,8 @@ Transform RotateY(Float theta) {
     return Transform(m, Transpose(m));
 }
 
-Transform RotateZ(Float theta) {
+Transform RotateZ(Float theta)
+{
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
     Matrix4x4 m(cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0, 0, 0, 0, 1, 0,
@@ -176,7 +206,8 @@ Transform RotateZ(Float theta) {
     return Transform(m, Transpose(m));
 }
 
-Transform Rotate(Float theta, const Vector3f &axis) {
+Transform Rotate(Float theta, const Vector3f &axis)
+{
     Vector3f a = Normalize(axis);
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
@@ -200,7 +231,8 @@ Transform Rotate(Float theta, const Vector3f &axis) {
     return Transform(m, Transpose(m));
 }
 
-Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
+Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up)
+{
     Matrix4x4 cameraToWorld;
     // Initialize fourth column of viewing matrix
     cameraToWorld.m[0][3] = pos.x;
@@ -210,7 +242,8 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
 
     // Initialize first three columns of viewing matrix
     Vector3f dir = Normalize(look - pos);
-    if (Cross(Normalize(up), dir).Length() == 0) {
+    if (Cross(Normalize(up), dir).Length() == 0)
+    {
         Error(
             "\"up\" vector (%f, %f, %f) and viewing direction (%f, %f, %f) "
             "passed to LookAt are pointing in the same direction.  Using "
@@ -235,7 +268,8 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
     return Transform(Inverse(cameraToWorld), cameraToWorld);
 }
 
-Bounds3f Transform::operator()(const Bounds3f &b) const {
+Bounds3f Transform::operator()(const Bounds3f &b) const
+{
     const Transform &M = *this;
     Bounds3f ret(M(Point3f(b.pMin.x, b.pMin.y, b.pMin.z)));
     ret = Union(ret, M(Point3f(b.pMax.x, b.pMin.y, b.pMin.z)));
@@ -248,18 +282,21 @@ Bounds3f Transform::operator()(const Bounds3f &b) const {
     return ret;
 }
 
-Transform Transform::operator*(const Transform &t2) const {
+Transform Transform::operator*(const Transform &t2) const
+{
     return Transform(Matrix4x4::Mul(m, t2.m), Matrix4x4::Mul(t2.mInv, mInv));
 }
 
-bool Transform::SwapsHandedness() const {
+bool Transform::SwapsHandedness() const
+{
     Float det = m.m[0][0] * (m.m[1][1] * m.m[2][2] - m.m[1][2] * m.m[2][1]) -
                 m.m[0][1] * (m.m[1][0] * m.m[2][2] - m.m[1][2] * m.m[2][0]) +
                 m.m[0][2] * (m.m[1][0] * m.m[2][1] - m.m[1][1] * m.m[2][0]);
     return det < 0;
 }
 
-SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
+SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const
+{
     SurfaceInteraction ret;
     // Transform _p_ and _pError_ in _SurfaceInteraction_
     ret.p = (*this)(si.p, si.pError, &ret.pError);
@@ -296,11 +333,13 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
     return ret;
 }
 
-Transform Orthographic(Float zNear, Float zFar) {
+Transform Orthographic(Float zNear, Float zFar)
+{
     return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 }
 
-Transform Perspective(Float fov, Float n, Float f) {
+Transform Perspective(Float fov, Float n, Float f)
+{
     // Perform projective divide for perspective projection
     Matrix4x4 persp(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, f / (f - n), -f * n / (f - n),
                     0, 0, 1, 0);
@@ -311,19 +350,23 @@ Transform Perspective(Float fov, Float n, Float f) {
 }
 
 // Interval Definitions
-class Interval {
+class Interval
+{
   public:
     // Interval Public Methods
     Interval(Float v) : low(v), high(v) {}
     Interval(Float v0, Float v1)
         : low(std::min(v0, v1)), high(std::max(v0, v1)) {}
-    Interval operator+(const Interval &i) const {
+    Interval operator+(const Interval &i) const
+    {
         return Interval(low + i.low, high + i.high);
     }
-    Interval operator-(const Interval &i) const {
+    Interval operator-(const Interval &i) const
+    {
         return Interval(low - i.high, high - i.low);
     }
-    Interval operator*(const Interval &i) const {
+    Interval operator*(const Interval &i) const
+    {
         return Interval(std::min(std::min(low * i.low, high * i.low),
                                  std::min(low * i.high, high * i.high)),
                         std::max(std::max(low * i.low, high * i.low),
@@ -332,36 +375,46 @@ class Interval {
     Float low, high;
 };
 
-inline Interval Sin(const Interval &i) {
+inline Interval Sin(const Interval &i)
+{
     CHECK_GE(i.low, 0);
     CHECK_LE(i.high, 2.0001 * Pi);
     Float sinLow = std::sin(i.low), sinHigh = std::sin(i.high);
-    if (sinLow > sinHigh) std::swap(sinLow, sinHigh);
-    if (i.low < Pi / 2 && i.high > Pi / 2) sinHigh = 1.;
-    if (i.low < (3.f / 2.f) * Pi && i.high > (3.f / 2.f) * Pi) sinLow = -1.;
+    if (sinLow > sinHigh)
+        std::swap(sinLow, sinHigh);
+    if (i.low < Pi / 2 && i.high > Pi / 2)
+        sinHigh = 1.;
+    if (i.low < (3.f / 2.f) * Pi && i.high > (3.f / 2.f) * Pi)
+        sinLow = -1.;
     return Interval(sinLow, sinHigh);
 }
 
-inline Interval Cos(const Interval &i) {
+inline Interval Cos(const Interval &i)
+{
     CHECK_GE(i.low, 0);
     CHECK_LE(i.high, 2.0001 * Pi);
     Float cosLow = std::cos(i.low), cosHigh = std::cos(i.high);
-    if (cosLow > cosHigh) std::swap(cosLow, cosHigh);
-    if (i.low < Pi && i.high > Pi) cosLow = -1.;
+    if (cosLow > cosHigh)
+        std::swap(cosLow, cosHigh);
+    if (i.low < Pi && i.high > Pi)
+        cosLow = -1.;
     return Interval(cosLow, cosHigh);
 }
 
 void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
                        Float theta, Interval tInterval, Float *zeros,
-                       int *zeroCount, int depth = 8) {
+                       int *zeroCount, int depth = 8)
+{
     // Evaluate motion derivative in interval form, return if no zeros
     Interval range = Interval(c1) +
                      (Interval(c2) + Interval(c3) * tInterval) *
                          Cos(Interval(2 * theta) * tInterval) +
                      (Interval(c4) + Interval(c5) * tInterval) *
                          Sin(Interval(2 * theta) * tInterval);
-    if (range.low > 0. || range.high < 0. || range.low == range.high) return;
-    if (depth > 0) {
+    if (range.low > 0. || range.high < 0. || range.low == range.high)
+        return;
+    if (depth > 0)
+    {
         // Split _tInterval_ and check both resulting intervals
         Float mid = (tInterval.low + tInterval.high) * 0.5f;
         IntervalFindZeros(c1, c2, c3, c4, c5, theta,
@@ -370,10 +423,13 @@ void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
         IntervalFindZeros(c1, c2, c3, c4, c5, theta,
                           Interval(mid, tInterval.high), zeros, zeroCount,
                           depth - 1);
-    } else {
+    }
+    else
+    {
         // Use Newton's method to refine zero
         Float tNewton = (tInterval.low + tInterval.high) * 0.5f;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < 4; ++i)
+        {
             Float fNewton =
                 c1 + (c2 + c3 * tNewton) * std::cos(2.f * theta * tNewton) +
                 (c4 + c5 * tNewton) * std::sin(2.f * theta * tNewton);
@@ -381,11 +437,13 @@ void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
                                      std::cos(2.f * tNewton * theta) +
                                  (c5 - 2 * (c2 + c3 * tNewton) * theta) *
                                      std::sin(2.f * tNewton * theta);
-            if (fNewton == 0 || fPrimeNewton == 0) break;
+            if (fNewton == 0 || fPrimeNewton == 0)
+                break;
             tNewton = tNewton - fNewton / fPrimeNewton;
         }
         if (tNewton >= tInterval.low - 1e-3f &&
-            tNewton < tInterval.high + 1e-3f) {
+            tNewton < tInterval.high + 1e-3f)
+        {
             zeros[*zeroCount] = tNewton;
             (*zeroCount)++;
         }
@@ -401,16 +459,19 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
       endTransform(endTransform),
       startTime(startTime),
       endTime(endTime),
-      actuallyAnimated(*startTransform != *endTransform) {
+      actuallyAnimated(*startTransform != *endTransform)
+{
     if (!actuallyAnimated)
         return;
     Decompose(startTransform->m, &T[0], &R[0], &S[0]);
     Decompose(endTransform->m, &T[1], &R[1], &S[1]);
     // Flip _R[1]_ if needed to select shortest path
-    if (Dot(R[0], R[1]) < 0) R[1] = -R[1];
+    if (Dot(R[0], R[1]) < 0)
+        R[1] = -R[1];
     hasRotation = Dot(R[0], R[1]) < 0.9995f;
     // Compute terms of motion derivative function
-    if (hasRotation) {
+    if (hasRotation)
+    {
         Float cosTheta = Dot(R[0], R[1]);
         Float theta = std::acos(Clamp(cosTheta, -1, 1));
         Quaternion qperp = Normalize(R[1] - R[0] * cosTheta);
@@ -543,32 +604,11 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
 
         c3[0] = DerivativeTerm(
             0.,
-            -2 * (q1x * qperpy * s010 - q1w * qperpz * s010 +
-                  q1w * qperpy * s020 + q1x * qperpz * s020 -
-                  q1x * qperpy * s110 + q1w * qperpz * s110 -
-                  q1w * qperpy * s120 - q1x * qperpz * s120 +
-                  q1y * (-2 * qperpy * s000 + qperpx * s010 + qperpw * s020 +
-                         2 * qperpy * s100 - qperpx * s110 - qperpw * s120) +
-                  q1z * (-2 * qperpz * s000 - qperpw * s010 + qperpx * s020 +
-                         2 * qperpz * s100 + qperpw * s110 - qperpx * s120)) *
+            -2 * (q1x * qperpy * s010 - q1w * qperpz * s010 + q1w * qperpy * s020 + q1x * qperpz * s020 - q1x * qperpy * s110 + q1w * qperpz * s110 - q1w * qperpy * s120 - q1x * qperpz * s120 + q1y * (-2 * qperpy * s000 + qperpx * s010 + qperpw * s020 + 2 * qperpy * s100 - qperpx * s110 - qperpw * s120) + q1z * (-2 * qperpz * s000 - qperpw * s010 + qperpx * s020 + 2 * qperpz * s100 + qperpw * s110 - qperpx * s120)) *
                 theta,
-            -2 * (q1x * qperpy * s011 - q1w * qperpz * s011 +
-                  q1w * qperpy * s021 + q1x * qperpz * s021 -
-                  q1x * qperpy * s111 + q1w * qperpz * s111 -
-                  q1w * qperpy * s121 - q1x * qperpz * s121 +
-                  q1y * (-2 * qperpy * s001 + qperpx * s011 + qperpw * s021 +
-                         2 * qperpy * s101 - qperpx * s111 - qperpw * s121) +
-                  q1z * (-2 * qperpz * s001 - qperpw * s011 + qperpx * s021 +
-                         2 * qperpz * s101 + qperpw * s111 - qperpx * s121)) *
+            -2 * (q1x * qperpy * s011 - q1w * qperpz * s011 + q1w * qperpy * s021 + q1x * qperpz * s021 - q1x * qperpy * s111 + q1w * qperpz * s111 - q1w * qperpy * s121 - q1x * qperpz * s121 + q1y * (-2 * qperpy * s001 + qperpx * s011 + qperpw * s021 + 2 * qperpy * s101 - qperpx * s111 - qperpw * s121) + q1z * (-2 * qperpz * s001 - qperpw * s011 + qperpx * s021 + 2 * qperpz * s101 + qperpw * s111 - qperpx * s121)) *
                 theta,
-            -2 * (q1x * qperpy * s012 - q1w * qperpz * s012 +
-                  q1w * qperpy * s022 + q1x * qperpz * s022 -
-                  q1x * qperpy * s112 + q1w * qperpz * s112 -
-                  q1w * qperpy * s122 - q1x * qperpz * s122 +
-                  q1y * (-2 * qperpy * s002 + qperpx * s012 + qperpw * s022 +
-                         2 * qperpy * s102 - qperpx * s112 - qperpw * s122) +
-                  q1z * (-2 * qperpz * s002 - qperpw * s012 + qperpx * s022 +
-                         2 * qperpz * s102 + qperpw * s112 - qperpx * s122)) *
+            -2 * (q1x * qperpy * s012 - q1w * qperpz * s012 + q1w * qperpy * s022 + q1x * qperpz * s022 - q1x * qperpy * s112 + q1w * qperpz * s112 - q1w * qperpy * s122 - q1x * qperpz * s122 + q1y * (-2 * qperpy * s002 + qperpx * s012 + qperpw * s022 + 2 * qperpy * s102 - qperpx * s112 - qperpw * s122) + q1z * (-2 * qperpz * s002 - qperpw * s012 + qperpx * s022 + 2 * qperpz * s102 + qperpw * s112 - qperpx * s122)) *
                 theta);
 
         c4[0] = DerivativeTerm(
@@ -630,35 +670,11 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
 
         c5[0] = DerivativeTerm(
             0.,
-            2 * (qperpy * qperpy * s000 + qperpz * qperpz * s000 -
-                 qperpx * qperpy * s010 + qperpw * qperpz * s010 -
-                 qperpw * qperpy * s020 - qperpx * qperpz * s020 -
-                 qperpy * qperpy * s100 - qperpz * qperpz * s100 +
-                 q1y * q1y * (-s000 + s100) + q1z * q1z * (-s000 + s100) +
-                 qperpx * qperpy * s110 - qperpw * qperpz * s110 +
-                 q1y * (q1x * (s010 - s110) + q1w * (s020 - s120)) +
-                 qperpw * qperpy * s120 + qperpx * qperpz * s120 +
-                 q1z * (-(q1w * s010) + q1x * s020 + q1w * s110 - q1x * s120)) *
+            2 * (qperpy * qperpy * s000 + qperpz * qperpz * s000 - qperpx * qperpy * s010 + qperpw * qperpz * s010 - qperpw * qperpy * s020 - qperpx * qperpz * s020 - qperpy * qperpy * s100 - qperpz * qperpz * s100 + q1y * q1y * (-s000 + s100) + q1z * q1z * (-s000 + s100) + qperpx * qperpy * s110 - qperpw * qperpz * s110 + q1y * (q1x * (s010 - s110) + q1w * (s020 - s120)) + qperpw * qperpy * s120 + qperpx * qperpz * s120 + q1z * (-(q1w * s010) + q1x * s020 + q1w * s110 - q1x * s120)) *
                 theta,
-            2 * (qperpy * qperpy * s001 + qperpz * qperpz * s001 -
-                 qperpx * qperpy * s011 + qperpw * qperpz * s011 -
-                 qperpw * qperpy * s021 - qperpx * qperpz * s021 -
-                 qperpy * qperpy * s101 - qperpz * qperpz * s101 +
-                 q1y * q1y * (-s001 + s101) + q1z * q1z * (-s001 + s101) +
-                 qperpx * qperpy * s111 - qperpw * qperpz * s111 +
-                 q1y * (q1x * (s011 - s111) + q1w * (s021 - s121)) +
-                 qperpw * qperpy * s121 + qperpx * qperpz * s121 +
-                 q1z * (-(q1w * s011) + q1x * s021 + q1w * s111 - q1x * s121)) *
+            2 * (qperpy * qperpy * s001 + qperpz * qperpz * s001 - qperpx * qperpy * s011 + qperpw * qperpz * s011 - qperpw * qperpy * s021 - qperpx * qperpz * s021 - qperpy * qperpy * s101 - qperpz * qperpz * s101 + q1y * q1y * (-s001 + s101) + q1z * q1z * (-s001 + s101) + qperpx * qperpy * s111 - qperpw * qperpz * s111 + q1y * (q1x * (s011 - s111) + q1w * (s021 - s121)) + qperpw * qperpy * s121 + qperpx * qperpz * s121 + q1z * (-(q1w * s011) + q1x * s021 + q1w * s111 - q1x * s121)) *
                 theta,
-            2 * (qperpy * qperpy * s002 + qperpz * qperpz * s002 -
-                 qperpx * qperpy * s012 + qperpw * qperpz * s012 -
-                 qperpw * qperpy * s022 - qperpx * qperpz * s022 -
-                 qperpy * qperpy * s102 - qperpz * qperpz * s102 +
-                 q1y * q1y * (-s002 + s102) + q1z * q1z * (-s002 + s102) +
-                 qperpx * qperpy * s112 - qperpw * qperpz * s112 +
-                 q1y * (q1x * (s012 - s112) + q1w * (s022 - s122)) +
-                 qperpw * qperpy * s122 + qperpx * qperpz * s122 +
-                 q1z * (-(q1w * s012) + q1x * s022 + q1w * s112 - q1x * s122)) *
+            2 * (qperpy * qperpy * s002 + qperpz * qperpz * s002 - qperpx * qperpy * s012 + qperpw * qperpz * s012 - qperpw * qperpy * s022 - qperpx * qperpz * s022 - qperpy * qperpy * s102 - qperpz * qperpz * s102 + q1y * q1y * (-s002 + s102) + q1z * q1z * (-s002 + s102) + qperpx * qperpy * s112 - qperpw * qperpz * s112 + q1y * (q1x * (s012 - s112) + q1w * (s022 - s122)) + qperpw * qperpy * s122 + qperpx * qperpz * s122 + q1z * (-(q1w * s012) + q1x * s022 + q1w * s112 - q1x * s122)) *
                 theta);
 
         c1[1] = DerivativeTerm(
@@ -755,38 +771,10 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
                        2 * qperpx * s022 * theta));
 
         c3[1] = DerivativeTerm(
-            0., 2 * (-(q1x * qperpy * s000) - q1w * qperpz * s000 +
-                     2 * q1x * qperpx * s010 + q1x * qperpw * s020 +
-                     q1w * qperpx * s020 + q1x * qperpy * s100 +
-                     q1w * qperpz * s100 - 2 * q1x * qperpx * s110 -
-                     q1x * qperpw * s120 - q1w * qperpx * s120 +
-                     q1z * (2 * qperpz * s010 - qperpy * s020 +
-                            qperpw * (-s000 + s100) - 2 * qperpz * s110 +
-                            qperpy * s120) +
-                     q1y * (-(qperpx * s000) - qperpz * s020 + qperpx * s100 +
-                            qperpz * s120)) *
-                    theta,
-            2 * (-(q1x * qperpy * s001) - q1w * qperpz * s001 +
-                 2 * q1x * qperpx * s011 + q1x * qperpw * s021 +
-                 q1w * qperpx * s021 + q1x * qperpy * s101 +
-                 q1w * qperpz * s101 - 2 * q1x * qperpx * s111 -
-                 q1x * qperpw * s121 - q1w * qperpx * s121 +
-                 q1z * (2 * qperpz * s011 - qperpy * s021 +
-                        qperpw * (-s001 + s101) - 2 * qperpz * s111 +
-                        qperpy * s121) +
-                 q1y * (-(qperpx * s001) - qperpz * s021 + qperpx * s101 +
-                        qperpz * s121)) *
+            0., 2 * (-(q1x * qperpy * s000) - q1w * qperpz * s000 + 2 * q1x * qperpx * s010 + q1x * qperpw * s020 + q1w * qperpx * s020 + q1x * qperpy * s100 + q1w * qperpz * s100 - 2 * q1x * qperpx * s110 - q1x * qperpw * s120 - q1w * qperpx * s120 + q1z * (2 * qperpz * s010 - qperpy * s020 + qperpw * (-s000 + s100) - 2 * qperpz * s110 + qperpy * s120) + q1y * (-(qperpx * s000) - qperpz * s020 + qperpx * s100 + qperpz * s120)) * theta,
+            2 * (-(q1x * qperpy * s001) - q1w * qperpz * s001 + 2 * q1x * qperpx * s011 + q1x * qperpw * s021 + q1w * qperpx * s021 + q1x * qperpy * s101 + q1w * qperpz * s101 - 2 * q1x * qperpx * s111 - q1x * qperpw * s121 - q1w * qperpx * s121 + q1z * (2 * qperpz * s011 - qperpy * s021 + qperpw * (-s001 + s101) - 2 * qperpz * s111 + qperpy * s121) + q1y * (-(qperpx * s001) - qperpz * s021 + qperpx * s101 + qperpz * s121)) *
                 theta,
-            2 * (-(q1x * qperpy * s002) - q1w * qperpz * s002 +
-                 2 * q1x * qperpx * s012 + q1x * qperpw * s022 +
-                 q1w * qperpx * s022 + q1x * qperpy * s102 +
-                 q1w * qperpz * s102 - 2 * q1x * qperpx * s112 -
-                 q1x * qperpw * s122 - q1w * qperpx * s122 +
-                 q1z * (2 * qperpz * s012 - qperpy * s022 +
-                        qperpw * (-s002 + s102) - 2 * qperpz * s112 +
-                        qperpy * s122) +
-                 q1y * (-(qperpx * s002) - qperpz * s022 + qperpx * s102 +
-                        qperpz * s122)) *
+            2 * (-(q1x * qperpy * s002) - q1w * qperpz * s002 + 2 * q1x * qperpx * s012 + q1x * qperpw * s022 + q1w * qperpx * s022 + q1x * qperpy * s102 + q1w * qperpz * s102 - 2 * q1x * qperpx * s112 - q1x * qperpw * s122 - q1w * qperpx * s122 + q1z * (2 * qperpz * s012 - qperpy * s022 + qperpw * (-s002 + s102) - 2 * qperpz * s112 + qperpy * s122) + q1y * (-(qperpx * s002) - qperpz * s022 + qperpx * s102 + qperpz * s122)) *
                 theta);
 
         c4[1] = DerivativeTerm(
@@ -850,54 +838,14 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
                        2 * q1y * s022 * theta));
 
         c5[1] = DerivativeTerm(
-            0., -2 * (qperpx * qperpy * s000 + qperpw * qperpz * s000 +
-                      q1z * q1z * s010 - qperpx * qperpx * s010 -
-                      qperpz * qperpz * s010 - q1y * q1z * s020 -
-                      qperpw * qperpx * s020 + qperpy * qperpz * s020 -
-                      qperpx * qperpy * s100 - qperpw * qperpz * s100 +
-                      q1w * q1z * (-s000 + s100) + q1x * q1x * (s010 - s110) -
-                      q1z * q1z * s110 + qperpx * qperpx * s110 +
-                      qperpz * qperpz * s110 +
-                      q1x * (q1y * (-s000 + s100) + q1w * (s020 - s120)) +
-                      q1y * q1z * s120 + qperpw * qperpx * s120 -
-                      qperpy * qperpz * s120) *
-                    theta,
-            -2 * (qperpx * qperpy * s001 + qperpw * qperpz * s001 +
-                  q1z * q1z * s011 - qperpx * qperpx * s011 -
-                  qperpz * qperpz * s011 - q1y * q1z * s021 -
-                  qperpw * qperpx * s021 + qperpy * qperpz * s021 -
-                  qperpx * qperpy * s101 - qperpw * qperpz * s101 +
-                  q1w * q1z * (-s001 + s101) + q1x * q1x * (s011 - s111) -
-                  q1z * q1z * s111 + qperpx * qperpx * s111 +
-                  qperpz * qperpz * s111 +
-                  q1x * (q1y * (-s001 + s101) + q1w * (s021 - s121)) +
-                  q1y * q1z * s121 + qperpw * qperpx * s121 -
-                  qperpy * qperpz * s121) *
+            0., -2 * (qperpx * qperpy * s000 + qperpw * qperpz * s000 + q1z * q1z * s010 - qperpx * qperpx * s010 - qperpz * qperpz * s010 - q1y * q1z * s020 - qperpw * qperpx * s020 + qperpy * qperpz * s020 - qperpx * qperpy * s100 - qperpw * qperpz * s100 + q1w * q1z * (-s000 + s100) + q1x * q1x * (s010 - s110) - q1z * q1z * s110 + qperpx * qperpx * s110 + qperpz * qperpz * s110 + q1x * (q1y * (-s000 + s100) + q1w * (s020 - s120)) + q1y * q1z * s120 + qperpw * qperpx * s120 - qperpy * qperpz * s120) * theta,
+            -2 * (qperpx * qperpy * s001 + qperpw * qperpz * s001 + q1z * q1z * s011 - qperpx * qperpx * s011 - qperpz * qperpz * s011 - q1y * q1z * s021 - qperpw * qperpx * s021 + qperpy * qperpz * s021 - qperpx * qperpy * s101 - qperpw * qperpz * s101 + q1w * q1z * (-s001 + s101) + q1x * q1x * (s011 - s111) - q1z * q1z * s111 + qperpx * qperpx * s111 + qperpz * qperpz * s111 + q1x * (q1y * (-s001 + s101) + q1w * (s021 - s121)) + q1y * q1z * s121 + qperpw * qperpx * s121 - qperpy * qperpz * s121) *
                 theta,
-            -2 * (qperpx * qperpy * s002 + qperpw * qperpz * s002 +
-                  q1z * q1z * s012 - qperpx * qperpx * s012 -
-                  qperpz * qperpz * s012 - q1y * q1z * s022 -
-                  qperpw * qperpx * s022 + qperpy * qperpz * s022 -
-                  qperpx * qperpy * s102 - qperpw * qperpz * s102 +
-                  q1w * q1z * (-s002 + s102) + q1x * q1x * (s012 - s112) -
-                  q1z * q1z * s112 + qperpx * qperpx * s112 +
-                  qperpz * qperpz * s112 +
-                  q1x * (q1y * (-s002 + s102) + q1w * (s022 - s122)) +
-                  q1y * q1z * s122 + qperpw * qperpx * s122 -
-                  qperpy * qperpz * s122) *
+            -2 * (qperpx * qperpy * s002 + qperpw * qperpz * s002 + q1z * q1z * s012 - qperpx * qperpx * s012 - qperpz * qperpz * s012 - q1y * q1z * s022 - qperpw * qperpx * s022 + qperpy * qperpz * s022 - qperpx * qperpy * s102 - qperpw * qperpz * s102 + q1w * q1z * (-s002 + s102) + q1x * q1x * (s012 - s112) - q1z * q1z * s112 + qperpx * qperpx * s112 + qperpz * qperpz * s112 + q1x * (q1y * (-s002 + s102) + q1w * (s022 - s122)) + q1y * q1z * s122 + qperpw * qperpx * s122 - qperpy * qperpz * s122) *
                 theta);
 
         c1[2] = DerivativeTerm(
-            -t0z + t1z, (qperpw * qperpy * s000 - qperpx * qperpz * s000 -
-                         q1y * q1z * s010 - qperpw * qperpx * s010 -
-                         qperpy * qperpz * s010 - s020 + q1y * q1y * s020 +
-                         qperpx * qperpx * s020 + qperpy * qperpy * s020 -
-                         qperpw * qperpy * s100 + qperpx * qperpz * s100 +
-                         q1x * q1z * (-s000 + s100) + q1y * q1z * s110 +
-                         qperpw * qperpx * s110 + qperpy * qperpz * s110 +
-                         q1w * (q1y * (s000 - s100) + q1x * (-s010 + s110)) +
-                         q1x * q1x * (s020 - s120) + s120 - q1y * q1y * s120 -
-                         qperpx * qperpx * s120 - qperpy * qperpy * s120),
+            -t0z + t1z, (qperpw * qperpy * s000 - qperpx * qperpz * s000 - q1y * q1z * s010 - qperpw * qperpx * s010 - qperpy * qperpz * s010 - s020 + q1y * q1y * s020 + qperpx * qperpx * s020 + qperpy * qperpy * s020 - qperpw * qperpy * s100 + qperpx * qperpz * s100 + q1x * q1z * (-s000 + s100) + q1y * q1z * s110 + qperpw * qperpx * s110 + qperpy * qperpz * s110 + q1w * (q1y * (s000 - s100) + q1x * (-s010 + s110)) + q1x * q1x * (s020 - s120) + s120 - q1y * q1y * s120 - qperpx * qperpx * s120 - qperpy * qperpy * s120),
             (qperpw * qperpy * s001 - qperpx * qperpz * s001 -
              q1y * q1z * s011 - qperpw * qperpx * s011 -
              qperpy * qperpz * s011 - s021 + q1y * q1y * s021 +
@@ -966,41 +914,10 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
              4 * q1y * qperpy * s022 * theta));
 
         c3[2] = DerivativeTerm(
-            0., -2 * (-(q1w * qperpy * s000) + q1x * qperpz * s000 +
-                      q1x * qperpw * s010 + q1w * qperpx * s010 -
-                      2 * q1x * qperpx * s020 + q1w * qperpy * s100 -
-                      q1x * qperpz * s100 - q1x * qperpw * s110 -
-                      q1w * qperpx * s110 +
-                      q1z * (qperpx * s000 + qperpy * s010 - qperpx * s100 -
-                             qperpy * s110) +
-                      2 * q1x * qperpx * s120 +
-                      q1y * (qperpz * s010 - 2 * qperpy * s020 +
-                             qperpw * (-s000 + s100) - qperpz * s110 +
-                             2 * qperpy * s120)) *
-                    theta,
-            -2 * (-(q1w * qperpy * s001) + q1x * qperpz * s001 +
-                  q1x * qperpw * s011 + q1w * qperpx * s011 -
-                  2 * q1x * qperpx * s021 + q1w * qperpy * s101 -
-                  q1x * qperpz * s101 - q1x * qperpw * s111 -
-                  q1w * qperpx * s111 +
-                  q1z * (qperpx * s001 + qperpy * s011 - qperpx * s101 -
-                         qperpy * s111) +
-                  2 * q1x * qperpx * s121 +
-                  q1y * (qperpz * s011 - 2 * qperpy * s021 +
-                         qperpw * (-s001 + s101) - qperpz * s111 +
-                         2 * qperpy * s121)) *
+            0., -2 * (-(q1w * qperpy * s000) + q1x * qperpz * s000 + q1x * qperpw * s010 + q1w * qperpx * s010 - 2 * q1x * qperpx * s020 + q1w * qperpy * s100 - q1x * qperpz * s100 - q1x * qperpw * s110 - q1w * qperpx * s110 + q1z * (qperpx * s000 + qperpy * s010 - qperpx * s100 - qperpy * s110) + 2 * q1x * qperpx * s120 + q1y * (qperpz * s010 - 2 * qperpy * s020 + qperpw * (-s000 + s100) - qperpz * s110 + 2 * qperpy * s120)) * theta,
+            -2 * (-(q1w * qperpy * s001) + q1x * qperpz * s001 + q1x * qperpw * s011 + q1w * qperpx * s011 - 2 * q1x * qperpx * s021 + q1w * qperpy * s101 - q1x * qperpz * s101 - q1x * qperpw * s111 - q1w * qperpx * s111 + q1z * (qperpx * s001 + qperpy * s011 - qperpx * s101 - qperpy * s111) + 2 * q1x * qperpx * s121 + q1y * (qperpz * s011 - 2 * qperpy * s021 + qperpw * (-s001 + s101) - qperpz * s111 + 2 * qperpy * s121)) *
                 theta,
-            -2 * (-(q1w * qperpy * s002) + q1x * qperpz * s002 +
-                  q1x * qperpw * s012 + q1w * qperpx * s012 -
-                  2 * q1x * qperpx * s022 + q1w * qperpy * s102 -
-                  q1x * qperpz * s102 - q1x * qperpw * s112 -
-                  q1w * qperpx * s112 +
-                  q1z * (qperpx * s002 + qperpy * s012 - qperpx * s102 -
-                         qperpy * s112) +
-                  2 * q1x * qperpx * s122 +
-                  q1y * (qperpz * s012 - 2 * qperpy * s022 +
-                         qperpw * (-s002 + s102) - qperpz * s112 +
-                         2 * qperpy * s122)) *
+            -2 * (-(q1w * qperpy * s002) + q1x * qperpz * s002 + q1x * qperpw * s012 + q1w * qperpx * s012 - 2 * q1x * qperpx * s022 + q1w * qperpy * s102 - q1x * qperpz * s102 - q1x * qperpw * s112 - q1w * qperpx * s112 + q1z * (qperpx * s002 + qperpy * s012 - qperpx * s102 - qperpy * s112) + 2 * q1x * qperpx * s122 + q1y * (qperpz * s012 - 2 * qperpy * s022 + qperpw * (-s002 + s102) - qperpz * s112 + 2 * qperpy * s122)) *
                 theta);
 
         c4[2] = DerivativeTerm(
@@ -1061,47 +978,17 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
                        2 * q1z * s012 * theta));
 
         c5[2] = DerivativeTerm(
-            0., 2 * (qperpw * qperpy * s000 - qperpx * qperpz * s000 +
-                     q1y * q1z * s010 - qperpw * qperpx * s010 -
-                     qperpy * qperpz * s010 - q1y * q1y * s020 +
-                     qperpx * qperpx * s020 + qperpy * qperpy * s020 +
-                     q1x * q1z * (s000 - s100) - qperpw * qperpy * s100 +
-                     qperpx * qperpz * s100 +
-                     q1w * (q1y * (-s000 + s100) + q1x * (s010 - s110)) -
-                     q1y * q1z * s110 + qperpw * qperpx * s110 +
-                     qperpy * qperpz * s110 + q1y * q1y * s120 -
-                     qperpx * qperpx * s120 - qperpy * qperpy * s120 +
-                     q1x * q1x * (-s020 + s120)) *
-                    theta,
-            2 * (qperpw * qperpy * s001 - qperpx * qperpz * s001 +
-                 q1y * q1z * s011 - qperpw * qperpx * s011 -
-                 qperpy * qperpz * s011 - q1y * q1y * s021 +
-                 qperpx * qperpx * s021 + qperpy * qperpy * s021 +
-                 q1x * q1z * (s001 - s101) - qperpw * qperpy * s101 +
-                 qperpx * qperpz * s101 +
-                 q1w * (q1y * (-s001 + s101) + q1x * (s011 - s111)) -
-                 q1y * q1z * s111 + qperpw * qperpx * s111 +
-                 qperpy * qperpz * s111 + q1y * q1y * s121 -
-                 qperpx * qperpx * s121 - qperpy * qperpy * s121 +
-                 q1x * q1x * (-s021 + s121)) *
+            0., 2 * (qperpw * qperpy * s000 - qperpx * qperpz * s000 + q1y * q1z * s010 - qperpw * qperpx * s010 - qperpy * qperpz * s010 - q1y * q1y * s020 + qperpx * qperpx * s020 + qperpy * qperpy * s020 + q1x * q1z * (s000 - s100) - qperpw * qperpy * s100 + qperpx * qperpz * s100 + q1w * (q1y * (-s000 + s100) + q1x * (s010 - s110)) - q1y * q1z * s110 + qperpw * qperpx * s110 + qperpy * qperpz * s110 + q1y * q1y * s120 - qperpx * qperpx * s120 - qperpy * qperpy * s120 + q1x * q1x * (-s020 + s120)) * theta,
+            2 * (qperpw * qperpy * s001 - qperpx * qperpz * s001 + q1y * q1z * s011 - qperpw * qperpx * s011 - qperpy * qperpz * s011 - q1y * q1y * s021 + qperpx * qperpx * s021 + qperpy * qperpy * s021 + q1x * q1z * (s001 - s101) - qperpw * qperpy * s101 + qperpx * qperpz * s101 + q1w * (q1y * (-s001 + s101) + q1x * (s011 - s111)) - q1y * q1z * s111 + qperpw * qperpx * s111 + qperpy * qperpz * s111 + q1y * q1y * s121 - qperpx * qperpx * s121 - qperpy * qperpy * s121 + q1x * q1x * (-s021 + s121)) *
                 theta,
-            2 * (qperpw * qperpy * s002 - qperpx * qperpz * s002 +
-                 q1y * q1z * s012 - qperpw * qperpx * s012 -
-                 qperpy * qperpz * s012 - q1y * q1y * s022 +
-                 qperpx * qperpx * s022 + qperpy * qperpy * s022 +
-                 q1x * q1z * (s002 - s102) - qperpw * qperpy * s102 +
-                 qperpx * qperpz * s102 +
-                 q1w * (q1y * (-s002 + s102) + q1x * (s012 - s112)) -
-                 q1y * q1z * s112 + qperpw * qperpx * s112 +
-                 qperpy * qperpz * s112 + q1y * q1y * s122 -
-                 qperpx * qperpx * s122 - qperpy * qperpy * s122 +
-                 q1x * q1x * (-s022 + s122)) *
+            2 * (qperpw * qperpy * s002 - qperpx * qperpz * s002 + q1y * q1z * s012 - qperpw * qperpx * s012 - qperpy * qperpz * s012 - q1y * q1y * s022 + qperpx * qperpx * s022 + qperpy * qperpy * s022 + q1x * q1z * (s002 - s102) - qperpw * qperpy * s102 + qperpx * qperpz * s102 + q1w * (q1y * (-s002 + s102) + q1x * (s012 - s112)) - q1y * q1z * s112 + qperpw * qperpx * s112 + qperpy * qperpz * s112 + q1y * q1y * s122 - qperpx * qperpx * s122 - qperpy * qperpy * s122 + q1x * q1x * (-s022 + s122)) *
                 theta);
     }
 }
 
 void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
-                                  Quaternion *Rquat, Matrix4x4 *S) {
+                                  Quaternion *Rquat, Matrix4x4 *S)
+{
     // Extract translation _T_ from transformation matrix
     T->x = m.m[0][3];
     T->y = m.m[1][3];
@@ -1109,14 +996,16 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
 
     // Compute new transformation matrix _M_ without translation
     Matrix4x4 M = m;
-    for (int i = 0; i < 3; ++i) M.m[i][3] = M.m[3][i] = 0.f;
+    for (int i = 0; i < 3; ++i)
+        M.m[i][3] = M.m[3][i] = 0.f;
     M.m[3][3] = 1.f;
 
     // Extract rotation _R_ from transformation matrix
     Float norm;
     int count = 0;
     Matrix4x4 R = M;
-    do {
+    do
+    {
         // Compute next matrix _Rnext_ in series
         Matrix4x4 Rnext;
         Matrix4x4 Rit = Inverse(Transpose(R));
@@ -1126,7 +1015,8 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
 
         // Compute norm of difference between _R_ and _Rnext_
         norm = 0;
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 3; ++i)
+        {
             Float n = std::abs(R.m[i][0] - Rnext.m[i][0]) +
                       std::abs(R.m[i][1] - Rnext.m[i][1]) +
                       std::abs(R.m[i][2] - Rnext.m[i][2]);
@@ -1141,13 +1031,16 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
     *S = Matrix4x4::Mul(Inverse(R), M);
 }
 
-void AnimatedTransform::Interpolate(Float time, Transform *t) const {
+void AnimatedTransform::Interpolate(Float time, Transform *t) const
+{
     // Handle boundary conditions for matrix interpolation
-    if (!actuallyAnimated || time <= startTime) {
+    if (!actuallyAnimated || time <= startTime)
+    {
         *t = *startTransform;
         return;
     }
-    if (time >= endTime) {
+    if (time >= endTime)
+    {
         *t = *endTransform;
         return;
     }
@@ -1168,31 +1061,36 @@ void AnimatedTransform::Interpolate(Float time, Transform *t) const {
     *t = Translate(trans) * rotate.ToTransform() * Transform(scale);
 }
 
-Ray AnimatedTransform::operator()(const Ray &r) const {
+Ray AnimatedTransform::operator()(const Ray &r) const
+{
     if (!actuallyAnimated || r.time <= startTime)
         return (*startTransform)(r);
     else if (r.time >= endTime)
         return (*endTransform)(r);
-    else {
+    else
+    {
         Transform t;
         Interpolate(r.time, &t);
         return t(r);
     }
 }
 
-RayDifferential AnimatedTransform::operator()(const RayDifferential &r) const {
+RayDifferential AnimatedTransform::operator()(const RayDifferential &r) const
+{
     if (!actuallyAnimated || r.time <= startTime)
         return (*startTransform)(r);
     else if (r.time >= endTime)
         return (*endTransform)(r);
-    else {
+    else
+    {
         Transform t;
         Interpolate(r.time, &t);
         return t(r);
     }
 }
 
-Point3f AnimatedTransform::operator()(Float time, const Point3f &p) const {
+Point3f AnimatedTransform::operator()(Float time, const Point3f &p) const
+{
     if (!actuallyAnimated || time <= startTime)
         return (*startTransform)(p);
     else if (time >= endTime)
@@ -1202,7 +1100,8 @@ Point3f AnimatedTransform::operator()(Float time, const Point3f &p) const {
     return t(p);
 }
 
-Vector3f AnimatedTransform::operator()(Float time, const Vector3f &v) const {
+Vector3f AnimatedTransform::operator()(Float time, const Vector3f &v) const
+{
     if (!actuallyAnimated || time <= startTime)
         return (*startTransform)(v);
     else if (time >= endTime)
@@ -1212,8 +1111,10 @@ Vector3f AnimatedTransform::operator()(Float time, const Vector3f &v) const {
     return t(v);
 }
 
-Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const {
-    if (!actuallyAnimated) return (*startTransform)(b);
+Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const
+{
+    if (!actuallyAnimated)
+        return (*startTransform)(b);
     if (hasRotation == false)
         return Union((*startTransform)(b), (*endTransform)(b));
     // Return motion bounds accounting for animated rotation
@@ -1223,12 +1124,15 @@ Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const {
     return bounds;
 }
 
-Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
-    if (!actuallyAnimated) return Bounds3f((*startTransform)(p));
+Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const
+{
+    if (!actuallyAnimated)
+        return Bounds3f((*startTransform)(p));
     Bounds3f bounds((*startTransform)(p), (*endTransform)(p));
     Float cosTheta = Dot(R[0], R[1]);
     Float theta = std::acos(Clamp(cosTheta, -1, 1));
-    for (int c = 0; c < 3; ++c) {
+    for (int c = 0; c < 3; ++c)
+    {
         // Find any motion derivative zeros for the component _c_
         Float zeros[8];
         int nZeros = 0;
@@ -1238,7 +1142,8 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
         CHECK_LE(nZeros, sizeof(zeros) / sizeof(zeros[0]));
 
         // Expand bounding box for any motion derivative zeros found
-        for (int i = 0; i < nZeros; ++i) {
+        for (int i = 0; i < nZeros; ++i)
+        {
             Point3f pz = (*this)(Lerp(zeros[i], startTime, endTime), p);
             bounds = Union(bounds, pz);
         }
@@ -1246,4 +1151,4 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
     return bounds;
 }
 
-}  // namespace pbrt
+} // namespace pbrt
