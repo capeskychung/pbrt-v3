@@ -43,31 +43,42 @@
 #include <list>
 #include <cstddef>
 
-namespace pbrt {
+namespace pbrt
+{
 
-// Memory Declarations
+// Memory 声明
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
+
 void *AllocAligned(size_t size);
+
 template <typename T>
-T *AllocAligned(size_t count) {
+T *AllocAligned(size_t count)
+{
     return (T *)AllocAligned(count * sizeof(T));
 }
 
 void FreeAligned(void *);
+
 class
 #ifdef PBRT_HAVE_ALIGNAS
-alignas(PBRT_L1_CACHE_LINE_SIZE)
+    alignas(PBRT_L1_CACHE_LINE_SIZE)
 #endif // PBRT_HAVE_ALIGNAS
-    MemoryArena {
+        MemoryArena
+{
   public:
-    // MemoryArena Public Methods
+    // MemoryArena 公有方法
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}
-    ~MemoryArena() {
+    ~MemoryArena()
+    {
         FreeAligned(currentBlock);
-        for (auto &block : usedBlocks) FreeAligned(block.second);
-        for (auto &block : availableBlocks) FreeAligned(block.second);
+        for (auto &block : usedBlocks)
+            FreeAligned(block.second);
+        for (auto &block : availableBlocks)
+            FreeAligned(block.second);
     }
-    void *Alloc(size_t nBytes) {
+
+    void *Alloc(size_t nBytes)
+    {
         // Round up _nBytes_ to minimum machine alignment
 #if __GNUC__ == 4 && __GNUC_MINOR__ < 9
         // gcc bug: max_align_t wasn't in std:: until 4.9.0
@@ -81,9 +92,11 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
         static_assert(IsPowerOf2(align), "Minimum alignment not a power of two");
 #endif
         nBytes = (nBytes + align - 1) & ~(align - 1);
-        if (currentBlockPos + nBytes > currentAllocSize) {
+        if (currentBlockPos + nBytes > currentAllocSize)
+        {
             // Add current block to _usedBlocks_ list
-            if (currentBlock) {
+            if (currentBlock)
+            {
                 usedBlocks.push_back(
                     std::make_pair(currentAllocSize, currentBlock));
                 currentBlock = nullptr;
@@ -94,15 +107,18 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
 
             // Try to get memory block from _availableBlocks_
             for (auto iter = availableBlocks.begin();
-                 iter != availableBlocks.end(); ++iter) {
-                if (iter->first >= nBytes) {
+                 iter != availableBlocks.end(); ++iter)
+            {
+                if (iter->first >= nBytes)
+                {
                     currentAllocSize = iter->first;
                     currentBlock = iter->second;
                     availableBlocks.erase(iter);
                     break;
                 }
             }
-            if (!currentBlock) {
+            if (!currentBlock)
+            {
                 currentAllocSize = std::max(nBytes, blockSize);
                 currentBlock = AllocAligned<uint8_t>(currentAllocSize);
             }
@@ -112,76 +128,97 @@ alignas(PBRT_L1_CACHE_LINE_SIZE)
         currentBlockPos += nBytes;
         return ret;
     }
+
     template <typename T>
-    T *Alloc(size_t n = 1, bool runConstructor = true) {
+    T *Alloc(size_t n = 1, bool runConstructor = true)
+    {
         T *ret = (T *)Alloc(n * sizeof(T));
         if (runConstructor)
-            for (size_t i = 0; i < n; ++i) new (&ret[i]) T();
+            for (size_t i = 0; i < n; ++i)
+                new (&ret[i]) T();
         return ret;
     }
-    void Reset() {
+
+    void Reset()
+    {
         currentBlockPos = 0;
         availableBlocks.splice(availableBlocks.begin(), usedBlocks);
     }
-    size_t TotalAllocated() const {
+    
+    size_t TotalAllocated() const
+    {
         size_t total = currentAllocSize;
-        for (const auto &alloc : usedBlocks) total += alloc.first;
-        for (const auto &alloc : availableBlocks) total += alloc.first;
+        for (const auto &alloc : usedBlocks)
+            total += alloc.first;
+        for (const auto &alloc : availableBlocks)
+            total += alloc.first;
         return total;
     }
 
   private:
-    MemoryArena(const MemoryArena &) = delete;
-    MemoryArena &operator=(const MemoryArena &) = delete;
-    // MemoryArena Private Data
-    const size_t blockSize;
+    MemoryArena(const MemoryArena &) = delete; // 删除拷贝构造函数
+    MemoryArena &operator=(const MemoryArena &) = delete; // 删除赋值函数
+
+    // MemoryArena 私有数据
+    const size_t blockSize; // 块的数量
     size_t currentBlockPos = 0, currentAllocSize = 0;
-    uint8_t *currentBlock = nullptr;
-    std::list<std::pair<size_t, uint8_t *>> usedBlocks, availableBlocks;
+    uint8_t *currentBlock = nullptr; // 
+    std::list<std::pair<size_t, uint8_t *>> usedBlocks, availableBlocks; // 已用块，可用块
 };
 
 template <typename T, int logBlockSize>
-class BlockedArray {
+class BlockedArray
+{
   public:
     // BlockedArray Public Methods
     BlockedArray(int uRes, int vRes, const T *d = nullptr)
-        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) {
+        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize)
+    {
         int nAlloc = RoundUp(uRes) * RoundUp(vRes);
         data = AllocAligned<T>(nAlloc);
-        for (int i = 0; i < nAlloc; ++i) new (&data[i]) T();
+        for (int i = 0; i < nAlloc; ++i)
+            new (&data[i]) T();
         if (d)
             for (int v = 0; v < vRes; ++v)
-                for (int u = 0; u < uRes; ++u) (*this)(u, v) = d[v * uRes + u];
+                for (int u = 0; u < uRes; ++u)
+                    (*this)(u, v) = d[v * uRes + u];
     }
     PBRT_CONSTEXPR int BlockSize() const { return 1 << logBlockSize; }
-    int RoundUp(int x) const {
+    int RoundUp(int x) const
+    {
         return (x + BlockSize() - 1) & ~(BlockSize() - 1);
     }
     int uSize() const { return uRes; }
     int vSize() const { return vRes; }
-    ~BlockedArray() {
-        for (int i = 0; i < uRes * vRes; ++i) data[i].~T();
+    ~BlockedArray()
+    {
+        for (int i = 0; i < uRes * vRes; ++i)
+            data[i].~T();
         FreeAligned(data);
     }
     int Block(int a) const { return a >> logBlockSize; }
     int Offset(int a) const { return (a & (BlockSize() - 1)); }
-    T &operator()(int u, int v) {
+    T &operator()(int u, int v)
+    {
         int bu = Block(u), bv = Block(v);
         int ou = Offset(u), ov = Offset(v);
         int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
         offset += BlockSize() * ov + ou;
         return data[offset];
     }
-    const T &operator()(int u, int v) const {
+    const T &operator()(int u, int v) const
+    {
         int bu = Block(u), bv = Block(v);
         int ou = Offset(u), ov = Offset(v);
         int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
         offset += BlockSize() * ov + ou;
         return data[offset];
     }
-    void GetLinearArray(T *a) const {
+    void GetLinearArray(T *a) const
+    {
         for (int v = 0; v < vRes; ++v)
-            for (int u = 0; u < uRes; ++u) *a++ = (*this)(u, v);
+            for (int u = 0; u < uRes; ++u)
+                *a++ = (*this)(u, v);
     }
 
   private:
@@ -190,6 +227,6 @@ class BlockedArray {
     const int uRes, vRes, uBlocks;
 };
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_MEMORY_H
+#endif // PBRT_CORE_MEMORY_H

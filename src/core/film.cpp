@@ -41,7 +41,7 @@ namespace pbrt {
 
 STAT_MEMORY_COUNTER("Memory/Film pixels", filmPixelMemory);
 
-// Film Method Definitions
+// Film 方法定义
 Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
            std::unique_ptr<Filter> filt, Float diagonal,
            const std::string &filename, Float scale, Float maxSampleLuminance)
@@ -51,7 +51,7 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
       filename(filename),
       scale(scale),
       maxSampleLuminance(maxSampleLuminance) {
-    // Compute film image bounds
+    // 计算 film 图片边界，ceil - 向上取整
     croppedPixelBounds =
         Bounds2i(Point2i(std::ceil(fullResolution.x * cropWindow.pMin.x),
                          std::ceil(fullResolution.y * cropWindow.pMin.y)),
@@ -61,7 +61,7 @@ Film::Film(const Point2i &resolution, const Bounds2f &cropWindow,
         ". Crop window of " << cropWindow << " -> croppedPixelBounds " <<
         croppedPixelBounds;
 
-    // Allocate film image storage
+    // 配置 film 图片的内存
     pixels = std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);
     filmPixelMemory += croppedPixelBounds.Area() * sizeof(Pixel);
 

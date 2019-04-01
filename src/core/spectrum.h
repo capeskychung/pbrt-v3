@@ -42,30 +42,35 @@
 #include "pbrt.h"
 #include "stringprint.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
 // Spectrum Utility Declarations
 static const int sampledLambdaStart = 400;
 static const int sampledLambdaEnd = 700;
 static const int nSpectralSamples = 60;
-extern bool SpectrumSamplesSorted(const Float *lambda, const Float *vals,
-                                  int n);
+extern bool SpectrumSamplesSorted(const Float *lambda, const Float *vals, int n);
 extern void SortSpectrumSamples(Float *lambda, Float *vals, int n);
-extern Float AverageSpectrumSamples(const Float *lambda, const Float *vals,
-                                    int n, Float lambdaStart, Float lambdaEnd);
-inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
+extern Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n, Float lambdaStart, Float lambdaEnd);
+inline void XYZToRGB(const Float xyz[3], Float rgb[3])
+{
     rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
     rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
     rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
 }
 
-inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
+inline void RGBToXYZ(const Float rgb[3], Float xyz[3])
+{
     xyz[0] = 0.412453f * rgb[0] + 0.357580f * rgb[1] + 0.180423f * rgb[2];
     xyz[1] = 0.212671f * rgb[0] + 0.715160f * rgb[1] + 0.072169f * rgb[2];
     xyz[2] = 0.019334f * rgb[0] + 0.119193f * rgb[1] + 0.950227f * rgb[2];
 }
 
-enum class SpectrumType { Reflectance, Illuminant };
+enum class SpectrumType
+{
+    Reflectance,
+    Illuminant
+};
 extern Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals,
                                         int n, Float l);
 extern void Blackbody(const Float *lambda, int n, Float T, Float *Le);
@@ -96,213 +101,323 @@ extern const Float RGBIllum2SpectRed[nRGB2SpectSamples];
 extern const Float RGBIllum2SpectGreen[nRGB2SpectSamples];
 extern const Float RGBIllum2SpectBlue[nRGB2SpectSamples];
 
-// Spectrum Declarations
+// Spectrum 声明
 template <int nSpectrumSamples>
-class CoefficientSpectrum {
+class CoefficientSpectrum
+{
   public:
-    // CoefficientSpectrum Public Methods
-    CoefficientSpectrum(Float v = 0.f) {
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] = v;
+    // CoefficientSpectrum 公有方法
+    CoefficientSpectrum(Float v = 0.f)
+    {
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] = v;
         DCHECK(!HasNaNs());
     }
 #ifdef DEBUG
-    CoefficientSpectrum(const CoefficientSpectrum &s) {
+    CoefficientSpectrum(const CoefficientSpectrum &s)
+    {
         DCHECK(!s.HasNaNs());
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] = s.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] = s.c[i];
     }
 
-    CoefficientSpectrum &operator=(const CoefficientSpectrum &s) {
+    CoefficientSpectrum &operator=(const CoefficientSpectrum &s)
+    {
         DCHECK(!s.HasNaNs());
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] = s.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] = s.c[i];
         return *this;
     }
-#endif  // DEBUG
-    void Print(FILE *f) const {
+#endif // DEBUG
+    void Print(FILE *f) const
+    {
         fprintf(f, "[ ");
-        for (int i = 0; i < nSpectrumSamples; ++i) {
+        for (int i = 0; i < nSpectrumSamples; ++i)
+        {
             fprintf(f, "%f", c[i]);
-            if (i != nSpectrumSamples - 1) fprintf(f, ", ");
+            if (i != nSpectrumSamples - 1)
+                fprintf(f, ", ");
         }
         fprintf(f, "]");
     }
-    CoefficientSpectrum &operator+=(const CoefficientSpectrum &s2) {
+
+    // 加并赋值
+    CoefficientSpectrum &operator+=(const CoefficientSpectrum &s2)
+    {
         DCHECK(!s2.HasNaNs());
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] += s2.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] += s2.c[i];
         return *this;
     }
-    CoefficientSpectrum operator+(const CoefficientSpectrum &s2) const {
+
+    // 加
+    CoefficientSpectrum operator+(const CoefficientSpectrum &s2) const
+    {
         DCHECK(!s2.HasNaNs());
         CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] += s2.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] += s2.c[i];
         return ret;
     }
-    CoefficientSpectrum operator-(const CoefficientSpectrum &s2) const {
+
+    // 减
+    CoefficientSpectrum operator-(const CoefficientSpectrum &s2) const
+    {
         DCHECK(!s2.HasNaNs());
         CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] -= s2.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] -= s2.c[i];
         return ret;
     }
-    CoefficientSpectrum operator/(const CoefficientSpectrum &s2) const {
-        DCHECK(!s2.HasNaNs());
-        CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) {
-          CHECK_NE(s2.c[i], 0);
-          ret.c[i] /= s2.c[i];
-        }
-        return ret;
-    }
-    CoefficientSpectrum operator*(const CoefficientSpectrum &sp) const {
+
+    // 乘以
+    CoefficientSpectrum operator*(const CoefficientSpectrum &sp) const
+    {
         DCHECK(!sp.HasNaNs());
         CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] *= sp.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] *= sp.c[i];
         return ret;
     }
-    CoefficientSpectrum &operator*=(const CoefficientSpectrum &sp) {
+
+    // 乘以并赋值
+    CoefficientSpectrum &operator*=(const CoefficientSpectrum &sp)
+    {
         DCHECK(!sp.HasNaNs());
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] *= sp.c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] *= sp.c[i];
         return *this;
     }
-    CoefficientSpectrum operator*(Float a) const {
+
+    // 乘以系数
+    CoefficientSpectrum operator*(Float a) const
+    {
         CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] *= a;
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] *= a;
         DCHECK(!ret.HasNaNs());
         return ret;
     }
-    CoefficientSpectrum &operator*=(Float a) {
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] *= a;
+
+    // 乘以系数并赋值
+    CoefficientSpectrum &operator*=(Float a)
+    {
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] *= a;
         DCHECK(!HasNaNs());
         return *this;
     }
-    friend inline CoefficientSpectrum operator*(Float a,
-                                                const CoefficientSpectrum &s) {
+
+    // 乘以系数并赋值
+    friend inline CoefficientSpectrum operator*(Float a, const CoefficientSpectrum &s)
+    {
         DCHECK(!std::isnan(a) && !s.HasNaNs());
         return s * a;
     }
-    CoefficientSpectrum operator/(Float a) const {
+
+    // 除以
+    CoefficientSpectrum operator/(const CoefficientSpectrum &s2) const
+    {
+        DCHECK(!s2.HasNaNs());
+        CoefficientSpectrum ret = *this;
+        for (int i = 0; i < nSpectrumSamples; ++i)
+        {
+            CHECK_NE(s2.c[i], 0);
+            ret.c[i] /= s2.c[i];
+        }
+        return ret;
+    }
+
+    // 除以系数
+    CoefficientSpectrum operator/(Float a) const
+    {
         CHECK_NE(a, 0);
         DCHECK(!std::isnan(a));
         CoefficientSpectrum ret = *this;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] /= a;
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] /= a;
         DCHECK(!ret.HasNaNs());
         return ret;
     }
-    CoefficientSpectrum &operator/=(Float a) {
+
+    // 除以系数并赋值
+    CoefficientSpectrum &operator/=(Float a)
+    {
         CHECK_NE(a, 0);
         DCHECK(!std::isnan(a));
-        for (int i = 0; i < nSpectrumSamples; ++i) c[i] /= a;
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            c[i] /= a;
         return *this;
     }
-    bool operator==(const CoefficientSpectrum &sp) const {
+
+    // 相等
+    bool operator==(const CoefficientSpectrum &sp) const
+    {
         for (int i = 0; i < nSpectrumSamples; ++i)
-            if (c[i] != sp.c[i]) return false;
+            if (c[i] != sp.c[i])
+                return false;
         return true;
     }
-    bool operator!=(const CoefficientSpectrum &sp) const {
+
+    // 不等
+    bool operator!=(const CoefficientSpectrum &sp) const
+    {
         return !(*this == sp);
     }
-    bool IsBlack() const {
+
+    // 是否黑色
+    bool IsBlack() const
+    {
         for (int i = 0; i < nSpectrumSamples; ++i)
-            if (c[i] != 0.) return false;
+            if (c[i] != 0.)
+                return false;
         return true;
     }
-    friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s) {
+
+    // 开方
+    friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s)
+    {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::sqrt(s.c[i]);
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] = std::sqrt(s.c[i]);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
+
+    // 求幂
     template <int n>
-    friend inline CoefficientSpectrum<n> Pow(const CoefficientSpectrum<n> &s,
-                                             Float e);
-    CoefficientSpectrum operator-() const {
+    friend inline CoefficientSpectrum<n> Pow(const CoefficientSpectrum<n> &s, Float e);
+
+    // 负号
+    CoefficientSpectrum operator-() const
+    {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = -c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] = -c[i];
         return ret;
     }
-    friend CoefficientSpectrum Exp(const CoefficientSpectrum &s) {
+
+    // e的指数函数
+    friend CoefficientSpectrum Exp(const CoefficientSpectrum &s)
+    {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::exp(s.c[i]);
+        for (int i = 0; i < nSpectrumSamples; ++i)
+            ret.c[i] = std::exp(s.c[i]);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
-    friend std::ostream &operator<<(std::ostream &os,
-                                    const CoefficientSpectrum &s) {
+
+    // 输出流
+    friend std::ostream &operator<<(std::ostream &os, const CoefficientSpectrum &s)
+    {
         return os << s.ToString();
     }
-    std::string ToString() const {
+
+    // 输出到string
+    std::string ToString() const
+    {
         std::string str = "[ ";
-        for (int i = 0; i < nSpectrumSamples; ++i) {
+        for (int i = 0; i < nSpectrumSamples; ++i)
+        {
             str += StringPrintf("%f", c[i]);
-            if (i + 1 < nSpectrumSamples) str += ", ";
+            if (i + 1 < nSpectrumSamples)
+                str += ", ";
         }
         str += " ]";
         return str;
     }
-    CoefficientSpectrum Clamp(Float low = 0, Float high = Infinity) const {
+
+    // 控制到一个范围，当小于low时，赋值low；当大于high时，赋值high
+    CoefficientSpectrum Clamp(Float low = 0, Float high = Infinity) const
+    {
         CoefficientSpectrum ret;
         for (int i = 0; i < nSpectrumSamples; ++i)
             ret.c[i] = pbrt::Clamp(c[i], low, high);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
-    Float MaxComponentValue() const {
+
+    // 最大的一个值
+    Float MaxComponentValue() const
+    {
         Float m = c[0];
         for (int i = 1; i < nSpectrumSamples; ++i)
             m = std::max(m, c[i]);
         return m;
     }
-    bool HasNaNs() const {
+
+    // 数据是否合法
+    bool HasNaNs() const
+    {
         for (int i = 0; i < nSpectrumSamples; ++i)
-            if (std::isnan(c[i])) return true;
+            if (std::isnan(c[i]))
+                return true;
         return false;
     }
-    bool Write(FILE *f) const {
+
+    // 写入到File句柄
+    bool Write(FILE *f) const
+    {
         for (int i = 0; i < nSpectrumSamples; ++i)
-            if (fprintf(f, "%f ", c[i]) < 0) return false;
+            if (fprintf(f, "%f ", c[i]) < 0)
+                return false;
         return true;
     }
-    bool Read(FILE *f) {
-        for (int i = 0; i < nSpectrumSamples; ++i) {
+
+    // 从File句柄读出
+    bool Read(FILE *f)
+    {
+        for (int i = 0; i < nSpectrumSamples; ++i)
+        {
             double v;
-            if (fscanf(f, "%lf ", &v) != 1) return false;
+            if (fscanf(f, "%lf ", &v) != 1)
+                return false;
             c[i] = v;
         }
         return true;
     }
-    Float &operator[](int i) {
-        DCHECK(i >= 0 && i < nSpectrumSamples);
-        return c[i];
-    }
-    Float operator[](int i) const {
+
+    // 下标
+    Float &operator[](int i)
+    {
         DCHECK(i >= 0 && i < nSpectrumSamples);
         return c[i];
     }
 
-    // CoefficientSpectrum Public Data
+    Float operator[](int i) const
+    {
+        DCHECK(i >= 0 && i < nSpectrumSamples);
+        return c[i];
+    }
+
+    // CoefficientSpectrum 公有数据
     static const int nSamples = nSpectrumSamples;
 
   protected:
-    // CoefficientSpectrum Protected Data
+    // CoefficientSpectrum 受保护数据
     Float c[nSpectrumSamples];
 };
 
-class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
+class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples>
+{
   public:
-    // SampledSpectrum Public Methods
+    // SampledSpectrum 公有方法
     SampledSpectrum(Float v = 0.f) : CoefficientSpectrum(v) {}
     SampledSpectrum(const CoefficientSpectrum<nSpectralSamples> &v)
         : CoefficientSpectrum<nSpectralSamples>(v) {}
-    static SampledSpectrum FromSampled(const Float *lambda, const Float *v,
-                                       int n) {
+    static SampledSpectrum FromSampled(const Float *lambda, const Float *v, int n)
+    {
         // Sort samples if unordered, use sorted for returned spectrum
-        if (!SpectrumSamplesSorted(lambda, v, n)) {
+        if (!SpectrumSamplesSorted(lambda, v, n))
+        {
             std::vector<Float> slambda(&lambda[0], &lambda[n]);
             std::vector<Float> sv(&v[0], &v[n]);
             SortSpectrumSamples(&slambda[0], &sv[0], n);
             return FromSampled(&slambda[0], &sv[0], n);
         }
         SampledSpectrum r;
-        for (int i = 0; i < nSpectralSamples; ++i) {
+        for (int i = 0; i < nSpectralSamples; ++i)
+        {
             // Compute average value of given SPD over $i$th sample's range
             Float lambda0 = Lerp(Float(i) / Float(nSpectralSamples),
                                  sampledLambdaStart, sampledLambdaEnd);
@@ -312,9 +427,11 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
         }
         return r;
     }
-    static void Init() {
+    static void Init()
+    {
         // Compute XYZ matching functions for _SampledSpectrum_
-        for (int i = 0; i < nSpectralSamples; ++i) {
+        for (int i = 0; i < nSpectralSamples; ++i)
+        {
             Float wl0 = Lerp(Float(i) / Float(nSpectralSamples),
                              sampledLambdaStart, sampledLambdaEnd);
             Float wl1 = Lerp(Float(i + 1) / Float(nSpectralSamples),
@@ -328,7 +445,8 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
         }
 
         // Compute RGB to spectrum functions for _SampledSpectrum_
-        for (int i = 0; i < nSpectralSamples; ++i) {
+        for (int i = 0; i < nSpectralSamples; ++i)
+        {
             Float wl0 = Lerp(Float(i) / Float(nSpectralSamples),
                              sampledLambdaStart, sampledLambdaEnd);
             Float wl1 = Lerp(Float(i + 1) / Float(nSpectralSamples),
@@ -377,9 +495,11 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
                                        nRGB2SpectSamples, wl0, wl1);
         }
     }
-    void ToXYZ(Float xyz[3]) const {
+    void ToXYZ(Float xyz[3]) const
+    {
         xyz[0] = xyz[1] = xyz[2] = 0.f;
-        for (int i = 0; i < nSpectralSamples; ++i) {
+        for (int i = 0; i < nSpectralSamples; ++i)
+        {
             xyz[0] += X.c[i] * c[i];
             xyz[1] += Y.c[i] * c[i];
             xyz[2] += Z.c[i] * c[i];
@@ -390,13 +510,16 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
         xyz[1] *= scale;
         xyz[2] *= scale;
     }
-    Float y() const {
+    Float y() const
+    {
         Float yy = 0.f;
-        for (int i = 0; i < nSpectralSamples; ++i) yy += Y.c[i] * c[i];
+        for (int i = 0; i < nSpectralSamples; ++i)
+            yy += Y.c[i] * c[i];
         return yy * Float(sampledLambdaEnd - sampledLambdaStart) /
                Float(CIE_Y_integral * nSpectralSamples);
     }
-    void ToRGB(Float rgb[3]) const {
+    void ToRGB(Float rgb[3]) const
+    {
         Float xyz[3];
         ToXYZ(xyz);
         XYZToRGB(xyz, rgb);
@@ -405,7 +528,8 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
     static SampledSpectrum FromRGB(
         const Float rgb[3], SpectrumType type = SpectrumType::Illuminant);
     static SampledSpectrum FromXYZ(
-        const Float xyz[3], SpectrumType type = SpectrumType::Reflectance) {
+        const Float xyz[3], SpectrumType type = SpectrumType::Reflectance)
+    {
         Float rgb[3];
         XYZToRGB(xyz, rgb);
         return FromRGB(rgb, type);
@@ -426,7 +550,8 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples> {
     static SampledSpectrum rgbIllum2SpectBlue;
 };
 
-class RGBSpectrum : public CoefficientSpectrum<3> {
+class RGBSpectrum : public CoefficientSpectrum<3>
+{
     using CoefficientSpectrum<3>::c;
 
   public:
@@ -434,11 +559,13 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
     RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
     RGBSpectrum(const CoefficientSpectrum<3> &v) : CoefficientSpectrum<3>(v) {}
     RGBSpectrum(const RGBSpectrum &s,
-                SpectrumType type = SpectrumType::Reflectance) {
+                SpectrumType type = SpectrumType::Reflectance)
+    {
         *this = s;
     }
     static RGBSpectrum FromRGB(const Float rgb[3],
-                               SpectrumType type = SpectrumType::Reflectance) {
+                               SpectrumType type = SpectrumType::Reflectance)
+    {
         RGBSpectrum s;
         s.c[0] = rgb[0];
         s.c[1] = rgb[1];
@@ -446,7 +573,8 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
         DCHECK(!s.HasNaNs());
         return s;
     }
-    void ToRGB(Float *rgb) const {
+    void ToRGB(Float *rgb) const
+    {
         rgb[0] = c[0];
         rgb[1] = c[1];
         rgb[2] = c[2];
@@ -454,25 +582,30 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
     const RGBSpectrum &ToRGBSpectrum() const { return *this; }
     void ToXYZ(Float xyz[3]) const { RGBToXYZ(c, xyz); }
     static RGBSpectrum FromXYZ(const Float xyz[3],
-                               SpectrumType type = SpectrumType::Reflectance) {
+                               SpectrumType type = SpectrumType::Reflectance)
+    {
         RGBSpectrum r;
         XYZToRGB(xyz, r.c);
         return r;
     }
-    Float y() const {
+    Float y() const
+    {
         const Float YWeight[3] = {0.212671f, 0.715160f, 0.072169f};
         return YWeight[0] * c[0] + YWeight[1] * c[1] + YWeight[2] * c[2];
     }
-    static RGBSpectrum FromSampled(const Float *lambda, const Float *v, int n) {
+    static RGBSpectrum FromSampled(const Float *lambda, const Float *v, int n)
+    {
         // Sort samples if unordered, use sorted for returned spectrum
-        if (!SpectrumSamplesSorted(lambda, v, n)) {
+        if (!SpectrumSamplesSorted(lambda, v, n))
+        {
             std::vector<Float> slambda(&lambda[0], &lambda[n]);
             std::vector<Float> sv(&v[0], &v[n]);
             SortSpectrumSamples(&slambda[0], &sv[0], n);
             return FromSampled(&slambda[0], &sv[0], n);
         }
         Float xyz[3] = {0, 0, 0};
-        for (int i = 0; i < nCIESamples; ++i) {
+        for (int i = 0; i < nCIESamples; ++i)
+        {
             Float val = InterpolateSpectrumSamples(lambda, v, n, CIE_lambda[i]);
             xyz[0] += val * CIE_X[i];
             xyz[1] += val * CIE_Y[i];
@@ -487,22 +620,25 @@ class RGBSpectrum : public CoefficientSpectrum<3> {
     }
 };
 
-// Spectrum Inline Functions
+// Spectrum 内联函数
 template <int nSpectrumSamples>
-inline CoefficientSpectrum<nSpectrumSamples> Pow(
-    const CoefficientSpectrum<nSpectrumSamples> &s, Float e) {
+inline CoefficientSpectrum<nSpectrumSamples> Pow(const CoefficientSpectrum<nSpectrumSamples> &s, Float e)
+{
     CoefficientSpectrum<nSpectrumSamples> ret;
-    for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::pow(s.c[i], e);
+    for (int i = 0; i < nSpectrumSamples; ++i)
+        ret.c[i] = std::pow(s.c[i], e);
     DCHECK(!ret.HasNaNs());
     return ret;
 }
 
-inline RGBSpectrum Lerp(Float t, const RGBSpectrum &s1, const RGBSpectrum &s2) {
+inline RGBSpectrum Lerp(Float t, const RGBSpectrum &s1, const RGBSpectrum &s2)
+{
     return (1 - t) * s1 + t * s2;
 }
 
 inline SampledSpectrum Lerp(Float t, const SampledSpectrum &s1,
-                            const SampledSpectrum &s2) {
+                            const SampledSpectrum &s2)
+{
     return (1 - t) * s1 + t * s2;
 }
 
@@ -510,6 +646,6 @@ void ResampleLinearSpectrum(const Float *lambdaIn, const Float *vIn, int nIn,
                             Float lambdaMin, Float lambdaMax, int nOut,
                             Float *vOut);
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_SPECTRUM_H
+#endif // PBRT_CORE_SPECTRUM_H

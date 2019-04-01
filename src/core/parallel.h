@@ -46,35 +46,46 @@
 #include <functional>
 #include <atomic>
 
-namespace pbrt {
+namespace pbrt
+{
 
-// Parallel Declarations
-class AtomicFloat {
+// Parallel 声明
+class AtomicFloat
+{
   public:
-    // AtomicFloat Public Methods
+    // AtomicFloat 公有方法
     explicit AtomicFloat(Float v = 0) { bits = FloatToBits(v); }
-    operator Float() const { return BitsToFloat(bits); }
-    Float operator=(Float v) {
+    
+    // Float类型转换运算符
+    operator Float() const { return BitsToFloat(bits); } 
+
+    // 赋值
+    Float operator=(Float v)
+    {
         bits = FloatToBits(v);
         return v;
     }
-    void Add(Float v) {
+
+    // 加
+    void Add(Float v)
+    {
 #ifdef PBRT_FLOAT_AS_DOUBLE
         uint64_t oldBits = bits, newBits;
 #else
         uint32_t oldBits = bits, newBits;
 #endif
-        do {
+        do
+        {
             newBits = FloatToBits(BitsToFloat(oldBits) + v);
         } while (!bits.compare_exchange_weak(oldBits, newBits));
     }
 
   private:
-// AtomicFloat Private Data
+// AtomicFloat 私有数据
 #ifdef PBRT_FLOAT_AS_DOUBLE
-    std::atomic<uint64_t> bits;
+    std::atomic<uint64_t> bits; // 原子类型
 #else
-    std::atomic<uint32_t> bits;
+    std::atomic<uint32_t> bits; // 原子类型
 #endif
 };
 
@@ -86,7 +97,12 @@ class AtomicFloat {
 // all threads that use it are passed the shared_ptr. This ensures that
 // memory for the Barrier won't be freed until all threads have
 // successfully cleared it.
-class Barrier {
+
+// 简单的一次性的屏障;确保多个线程都到达一个特定执行点并被阻塞，然后才允许它们中任意一个继续执行。
+// 注意:应该使用shared_ptr分配和管理堆，其中所有使用它的线程都传递shared_ptr。
+// 这确保在所有线程都成功清除屏障之前，屏障的内存不会被释放。
+class Barrier
+{
   public:
     Barrier(int count) : count(count) { CHECK_GT(count, 0); }
     ~Barrier() { CHECK_EQ(count, 0); }
@@ -98,8 +114,7 @@ class Barrier {
     int count;
 };
 
-void ParallelFor(std::function<void(int64_t)> func, int64_t count,
-                 int chunkSize = 1);
+void ParallelFor(std::function<void(int64_t)> func, int64_t count, int chunkSize = 1);
 extern PBRT_THREAD_LOCAL int ThreadIndex;
 void ParallelFor2D(std::function<void(Point2i)> func, const Point2i &count);
 int MaxThreadIndex();
@@ -109,6 +124,6 @@ void ParallelInit();
 void ParallelCleanup();
 void MergeWorkerThreadStats();
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_PARALLEL_H
+#endif // PBRT_CORE_PARALLEL_H

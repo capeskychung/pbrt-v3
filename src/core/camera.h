@@ -44,10 +44,12 @@
 #include "transform.h"
 #include "film.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
 // Camera 声明
-class Camera {
+class Camera
+{
   public:
     // Camera 接口
     Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
@@ -63,25 +65,27 @@ class Camera {
                                VisibilityTester *vis) const;
 
     // Camera 公有数据
-    AnimatedTransform CameraToWorld; // 相机坐标系到世界坐标系的变换矩阵
+    AnimatedTransform CameraToWorld;       // 相机坐标系到世界坐标系的变换矩阵
     const Float shutterOpen, shutterClose; // 快门
     Film *film;
     const Medium *medium;
 };
 
-struct CameraSample {
+struct CameraSample
+{
     Point2f pFilm;
     Point2f pLens;
     Float time;
 };
 
-inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs) {
-    os << "[ pFilm: " << cs.pFilm << " , pLens: " << cs.pLens <<
-        StringPrintf(", time %f ]", cs.time);
+inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs)
+{
+    os << "[ pFilm: " << cs.pFilm << " , pLens: " << cs.pLens << StringPrintf(", time %f ]", cs.time);
     return os;
 }
 
-class ProjectiveCamera : public Camera {
+class ProjectiveCamera : public Camera
+{
   public:
     // ProjectiveCamera Public Methods
     ProjectiveCamera(const AnimatedTransform &CameraToWorld,
@@ -90,7 +94,8 @@ class ProjectiveCamera : public Camera {
                      Float shutterClose, Float lensr, Float focald, Film *film,
                      const Medium *medium)
         : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
-          CameraToScreen(CameraToScreen) {
+          CameraToScreen(CameraToScreen)
+    {
         // Initialize depth of field parameters
         lensRadius = lensr;
         focalDistance = focald;
@@ -114,6 +119,6 @@ class ProjectiveCamera : public Camera {
     Float lensRadius, focalDistance;
 };
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_CAMERA_H
+#endif // PBRT_CORE_CAMERA_H

@@ -539,7 +539,7 @@ class AnimatedTransform
 
     // 插入
     void Interpolate(Float time, Transform *t) const;
-    
+
     Ray operator()(const Ray &r) const;
     RayDifferential operator()(const RayDifferential &r) const;
     Point3f operator()(Float time, const Point3f &p) const;
@@ -553,7 +553,7 @@ class AnimatedTransform
 
   private:
     // AnimatedTransform 私有数据
-    const Transform *startTransform, *endTransform;
+    const Transform *startTransform, *endTransform; // 
     const Float startTime, endTime;
     const bool actuallyAnimated;
     Vector3f T[2];
