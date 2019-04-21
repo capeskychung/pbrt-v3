@@ -37,7 +37,9 @@
 
 namespace pbrt {
 
-// Quaternion Method Definitions
+// Quaternion 方法定义
+
+// Quaternion 转换为 Transform
 Transform Quaternion::ToTransform() const {
     Float xx = v.x * v.x, yy = v.y * v.y, zz = v.z * v.z;
     Float xy = v.x * v.y, xz = v.x * v.z, yz = v.y * v.z;
@@ -58,6 +60,7 @@ Transform Quaternion::ToTransform() const {
     return Transform(Transpose(m), m);
 }
 
+// Transform 转换为 Quaternion
 Quaternion::Quaternion(const Transform &t) {
     const Matrix4x4 &m = t.m;
     Float trace = m.m[0][0] + m.m[1][1] + m.m[2][2];
@@ -91,10 +94,13 @@ Quaternion::Quaternion(const Transform &t) {
     }
 }
 
+// 球面线性插值
 Quaternion Slerp(Float t, const Quaternion &q1, const Quaternion &q2) {
     Float cosTheta = Dot(q1, q2);
+    // q1和q2非常接近时，使用常规线性插值，避免数值问题
     if (cosTheta > .9995f)
         return Normalize((1 - t) * q1 + t * q2);
+    // 球面线性插值，角速度恒定
     else {
         Float theta = std::acos(Clamp(cosTheta, -1, 1));
         Float thetap = theta * t;

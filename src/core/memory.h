@@ -144,7 +144,7 @@ class
         currentBlockPos = 0;
         availableBlocks.splice(availableBlocks.begin(), usedBlocks);
     }
-    
+
     size_t TotalAllocated() const
     {
         size_t total = currentAllocSize;
@@ -156,13 +156,13 @@ class
     }
 
   private:
-    MemoryArena(const MemoryArena &) = delete; // 删除拷贝构造函数
+    MemoryArena(const MemoryArena &) = delete;            // 删除拷贝构造函数
     MemoryArena &operator=(const MemoryArena &) = delete; // 删除赋值函数
 
     // MemoryArena 私有数据
     const size_t blockSize; // 块的数量
     size_t currentBlockPos = 0, currentAllocSize = 0;
-    uint8_t *currentBlock = nullptr; // 
+    uint8_t *currentBlock = nullptr;                                     //
     std::list<std::pair<size_t, uint8_t *>> usedBlocks, availableBlocks; // 已用块，可用块
 };
 

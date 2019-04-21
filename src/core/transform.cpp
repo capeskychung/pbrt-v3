@@ -156,9 +156,10 @@ Matrix4x4 Inverse(const Matrix4x4 &m) // 逆矩阵
     return Matrix4x4(minv);
 }
 
-// Transform Method Definitions
+// Transform 方法定义
 void Transform::Print(FILE *f) const { m.Print(f); }
 
+// 把 Vector3 表示的平移转换为 Transform
 Transform Translate(const Vector3f &delta)
 {
     Matrix4x4 m(1, 0, 0, delta.x,
@@ -172,18 +173,28 @@ Transform Translate(const Vector3f &delta)
     return Transform(m, minv);
 }
 
+// 缩放
 Transform Scale(Float x, Float y, Float z)
 {
-    Matrix4x4 m(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
-    Matrix4x4 minv(1 / x, 0, 0, 0, 0, 1 / y, 0, 0, 0, 0, 1 / z, 0, 0, 0, 0, 1);
+    Matrix4x4 m(x, 0, 0, 0,
+                0, y, 0, 0,
+                0, 0, z, 0,
+                0, 0, 0, 1);
+    Matrix4x4 minv(1 / x, 0, 0, 0,
+                   0, 1 / y, 0,
+                   0, 0, 0, 1 / z,
+                   0, 0, 0, 0, 1);
     return Transform(m, minv);
 }
 
+// 旋转
 Transform RotateX(Float theta)
 {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(1, 0, 0, 0, 0, cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0,
+    Matrix4x4 m(1, 0, 0, 0,
+                0, cosTheta, -sinTheta, 0,
+                0, sinTheta, cosTheta, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
 }
@@ -192,7 +203,9 @@ Transform RotateY(Float theta)
 {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(cosTheta, 0, sinTheta, 0, 0, 1, 0, 0, -sinTheta, 0, cosTheta, 0,
+    Matrix4x4 m(cosTheta, 0, sinTheta, 0,
+                0, 1, 0, 0,
+                -sinTheta, 0, cosTheta, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
 }
@@ -201,7 +214,9 @@ Transform RotateZ(Float theta)
 {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0, 0, 0, 0, 1, 0,
+    Matrix4x4 m(cosTheta, -sinTheta, 0, 0,
+                sinTheta, cosTheta, 0, 0,
+                0, 0, 1, 0,
                 0, 0, 0, 1);
     return Transform(m, Transpose(m));
 }
@@ -268,6 +283,8 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up)
     return Transform(Inverse(cameraToWorld), cameraToWorld);
 }
 
+// 变换
+// 对AABB变换，方法是将原来的AABB变换后，生成新的AABB，包含变换后的八个顶点
 Bounds3f Transform::operator()(const Bounds3f &b) const
 {
     const Transform &M = *this;
@@ -282,11 +299,13 @@ Bounds3f Transform::operator()(const Bounds3f &b) const
     return ret;
 }
 
+// 合并两个旋转
 Transform Transform::operator*(const Transform &t2) const
 {
     return Transform(Matrix4x4::Mul(m, t2.m), Matrix4x4::Mul(t2.mInv, mInv));
 }
 
+// 检测Transform是否转换了坐标手性
 bool Transform::SwapsHandedness() const
 {
     Float det = m.m[0][0] * (m.m[1][1] * m.m[2][2] - m.m[1][2] * m.m[2][1]) -
@@ -349,11 +368,11 @@ Transform Perspective(Float fov, Float n, Float f)
     return Scale(invTanAng, invTanAng, 1) * Transform(persp);
 }
 
-// Interval Definitions
+// Interval 定义
 class Interval
 {
-  public:
-    // Interval Public Methods
+public:
+    // Interval 公有方法
     Interval(Float v) : low(v), high(v) {}
     Interval(Float v0, Float v1)
         : low(std::min(v0, v1)), high(std::max(v0, v1)) {}
@@ -372,6 +391,8 @@ class Interval
                         std::max(std::max(low * i.low, high * i.low),
                                  std::max(low * i.high, high * i.high)));
     }
+
+    // 数据
     Float low, high;
 };
 
@@ -450,7 +471,7 @@ void IntervalFindZeros(Float c1, Float c2, Float c3, Float c4, Float c5,
     }
 }
 
-// AnimatedTransform Method Definitions
+// AnimatedTransform 方法定义
 AnimatedTransform::AnimatedTransform(const Transform *startTransform,
                                      Float startTime,
                                      const Transform *endTransform,
@@ -986,6 +1007,7 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
     }
 }
 
+// 分解，将Transform分解为平移，旋转和缩放
 void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
                                   Quaternion *Rquat, Matrix4x4 *S)
 {

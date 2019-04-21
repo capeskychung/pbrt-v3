@@ -147,7 +147,7 @@ struct Matrix4x4
 // Transform 声明
 class Transform
 {
-  public:
+public:
     // Transform 公有方法
     Transform() {}
 
@@ -273,10 +273,10 @@ class Transform
     // 对Bounds3f变换
     Bounds3f operator()(const Bounds3f &b) const;
 
-    // *运算符重载，将两个Transform合并
+    // *运算符重载，合并两个Transform
     Transform operator*(const Transform &t2) const;
 
-    // 转换坐标手性
+    // 判断该变换是否包含坐标手性变换
     bool SwapsHandedness() const;
 
     friend std::ostream &operator<<(std::ostream &os, const Transform &t) // 输出流
@@ -285,9 +285,9 @@ class Transform
         return os;
     }
 
-  private:
+private:
     // Transform 私有数据
-    Matrix4x4 m, mInv;
+    Matrix4x4 m, mInv; // 存储逆矩阵是为了方便计算，法线变换时需要使用逆矩阵
     friend class AnimatedTransform;
     friend struct Quaternion;
 };
@@ -471,6 +471,7 @@ inline Ray Transform::operator()(const Ray &r) const
     Point3f o = (*this)(r.o, &oError);
     Vector3f d = (*this)(r.d);
     // Offset ray origin to edge of error bounds and compute _tMax_
+    // 处理浮点数舍入问题
     Float lengthSquared = d.LengthSquared();
     Float tMax = r.tMax;
     if (lengthSquared > 0)
@@ -529,21 +530,24 @@ inline RayDifferential Transform::operator()(const RayDifferential &r) const
 // AnimatedTransform 声明
 class AnimatedTransform
 {
-  public:
+public:
     // AnimatedTransform 公有方法
     AnimatedTransform(const Transform *startTransform, Float startTime,
                       const Transform *endTransform, Float endTime);
-    
-    // 分解
+
+    // 分解，将Transform分解为平移，旋转和缩放
     static void Decompose(const Matrix4x4 &m, Vector3f *T, Quaternion *R, Matrix4x4 *S);
 
-    // 插入
+    // 插值，按给定时间，计算变换插值，由t带回结果
     void Interpolate(Float time, Transform *t) const;
 
+    // 变换
     Ray operator()(const Ray &r) const;
     RayDifferential operator()(const RayDifferential &r) const;
     Point3f operator()(Float time, const Point3f &p) const;
     Vector3f operator()(Float time, const Vector3f &v) const;
+
+    // 是否包含缩放
     bool HasScale() const
     {
         return startTransform->HasScale() || endTransform->HasScale();
@@ -551,15 +555,15 @@ class AnimatedTransform
     Bounds3f MotionBounds(const Bounds3f &b) const;
     Bounds3f BoundPointMotion(const Point3f &p) const;
 
-  private:
+private:
     // AnimatedTransform 私有数据
-    const Transform *startTransform, *endTransform; // 
-    const Float startTime, endTime;
+    const Transform *startTransform, *endTransform; // 起点和终点
+    const Float startTime, endTime; // 起点时间和终点时间
     const bool actuallyAnimated;
-    Vector3f T[2];
-    Quaternion R[2];
-    Matrix4x4 S[2];
-    bool hasRotation;
+    Vector3f T[2]; // 起点和终点的平移变换
+    Quaternion R[2]; // 起点和终点的旋转变换
+    Matrix4x4 S[2]; // 起点和终点的缩放变换
+    bool hasRotation; // 如果不包含旋转，可以直接对矩阵插值，而不需要转换为四元数
     // 导数项
     struct DerivativeTerm
     {
