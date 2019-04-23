@@ -1011,18 +1011,18 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
 void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
                                   Quaternion *Rquat, Matrix4x4 *S)
 {
-    // Extract translation _T_ from transformation matrix
+    // 提取平移
     T->x = m.m[0][3];
     T->y = m.m[1][3];
     T->z = m.m[2][3];
 
-    // Compute new transformation matrix _M_ without translation
+    // 去掉平移后的变换矩阵
     Matrix4x4 M = m;
     for (int i = 0; i < 3; ++i)
         M.m[i][3] = M.m[3][i] = 0.f;
     M.m[3][3] = 1.f;
 
-    // Extract rotation _R_ from transformation matrix
+    // 提取旋转
     Float norm;
     int count = 0;
     Matrix4x4 R = M;
@@ -1049,13 +1049,13 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
     // XXX TODO FIXME deal with flip...
     *Rquat = Quaternion(R);
 
-    // Compute scale _S_ using rotation and original matrix
+    // 提取缩放矩阵，M包含旋转和缩放，左乘旋转矩阵的逆矩阵即可
     *S = Matrix4x4::Mul(Inverse(R), M);
 }
 
 void AnimatedTransform::Interpolate(Float time, Transform *t) const
 {
-    // Handle boundary conditions for matrix interpolation
+    // 检查边界条件
     if (!actuallyAnimated || time <= startTime)
     {
         *t = *startTransform;
@@ -1066,23 +1066,26 @@ void AnimatedTransform::Interpolate(Float time, Transform *t) const
         *t = *endTransform;
         return;
     }
+
+    // 时间
     Float dt = (time - startTime) / (endTime - startTime);
-    // Interpolate translation at _dt_
+    // 平移插值
     Vector3f trans = (1 - dt) * T[0] + dt * T[1];
 
-    // Interpolate rotation at _dt_
+    // 旋转插值
     Quaternion rotate = Slerp(dt, R[0], R[1]);
 
-    // Interpolate scale at _dt_
+    // 缩放插值
     Matrix4x4 scale;
     for (int i = 0; i < 3; ++i)
         for (int j = 0; j < 3; ++j)
             scale.m[i][j] = Lerp(dt, S[0].m[i][j], S[1].m[i][j]);
 
-    // Compute interpolated matrix as product of interpolated components
+    // 合成变换矩阵
     *t = Translate(trans) * rotate.ToTransform() * Transform(scale);
 }
 
+// 使用Ray自带的时间计算插值矩阵，再用矩阵对ray变换
 Ray AnimatedTransform::operator()(const Ray &r) const
 {
     if (!actuallyAnimated || r.time <= startTime)
@@ -1135,17 +1138,21 @@ Vector3f AnimatedTransform::operator()(Float time, const Vector3f &v) const
 
 Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const
 {
+    // 如果没有运动，直接返回起点的变换
     if (!actuallyAnimated)
         return (*startTransform)(b);
+    
+    // 如果没有旋转，则只要计算包含起点和终点位置的包围盒
     if (hasRotation == false)
         return Union((*startTransform)(b), (*endTransform)(b));
-    // Return motion bounds accounting for animated rotation
+    // 如果包含旋转，则分别计算八个顶点在整个时间段运动轨迹的包围盒，再合并
     Bounds3f bounds;
     for (int corner = 0; corner < 8; ++corner)
         bounds = Union(bounds, BoundPointMotion(b.Corner(corner)));
     return bounds;
 }
 
+// 计算一个顶点在整个时间段的运动轨迹的包围盒
 Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const
 {
     if (!actuallyAnimated)
@@ -1155,7 +1162,7 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const
     Float theta = std::acos(Clamp(cosTheta, -1, 1));
     for (int c = 0; c < 3; ++c)
     {
-        // Find any motion derivative zeros for the component _c_
+        // 寻找导数为0的点，导数为0代表极值点
         Float zeros[8];
         int nZeros = 0;
         IntervalFindZeros(c1[c].Eval(p), c2[c].Eval(p), c3[c].Eval(p),
@@ -1163,7 +1170,7 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const
                           zeros, &nZeros);
         CHECK_LE(nZeros, sizeof(zeros) / sizeof(zeros[0]));
 
-        // Expand bounding box for any motion derivative zeros found
+        // 将每个极值点加入包围盒
         for (int i = 0; i < nZeros; ++i)
         {
             Point3f pz = (*this)(Lerp(zeros[i], startTime, endTime), p);

@@ -559,7 +559,7 @@ private:
     // AnimatedTransform 私有数据
     const Transform *startTransform, *endTransform; // 起点和终点
     const Float startTime, endTime; // 起点时间和终点时间
-    const bool actuallyAnimated;
+    const bool actuallyAnimated; // 如果起点和终点相同，则为False，不需要计算插值
     Vector3f T[2]; // 起点和终点的平移变换
     Quaternion R[2]; // 起点和终点的旋转变换
     Matrix4x4 S[2]; // 起点和终点的缩放变换
