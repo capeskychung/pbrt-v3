@@ -39,30 +39,35 @@
 #define PBRT_CORE_SHAPE_H
 
 // core/shape.h*
-#include "pbrt.h"
 #include "geometry.h"
 #include "interaction.h"
 #include "memory.h"
+#include "pbrt.h"
 #include "transform.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
-// Shape Declarations
-class Shape {
-  public:
-    // Shape Interface
+// Shape 声明
+class Shape
+{
+public:
+    // Shape 接口
     Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
           bool reverseOrientation);
     virtual ~Shape();
-    virtual Bounds3f ObjectBound() const = 0;
-    virtual Bounds3f WorldBound() const;
-    virtual bool Intersect(const Ray &ray, Float *tHit,
-                           SurfaceInteraction *isect,
+    virtual Bounds3f ObjectBound() const = 0; // 模型空间包围盒
+    virtual Bounds3f WorldBound() const;      // 世界空间包围盒，默认实现：将模型空间包围盒转换到世界空间，再求包围盒
+
+    // 求交，并返回交点信息，ray为世界空间表示，返回的信息也应为世界空间表示
+    virtual bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                            bool testAlphaTexture = true) const = 0;
-    virtual bool IntersectP(const Ray &ray,
-                            bool testAlphaTexture = true) const {
+    // 求交，但不返回交点信息，默认实现为调用Intersect，比较慢，建议子类单独实现更高效的版本
+    virtual bool IntersectP(const Ray &ray, bool testAlphaTexture = true) const
+    {
         return Intersect(ray, nullptr, nullptr, testAlphaTexture);
     }
+    // 区域光源使用
     virtual Float Area() const = 0;
     // Sample a point on the surface of the shape and return the PDF with
     // respect to area on the surface.
@@ -82,12 +87,12 @@ class Shape {
     // used in this case.
     virtual Float SolidAngle(const Point3f &p, int nSamples = 512) const;
 
-    // Shape Public Data
-    const Transform *ObjectToWorld, *WorldToObject;
+    // Shape 公有数据
+    const Transform *ObjectToWorld, *WorldToObject; // 模型空间和世界空间的转换
     const bool reverseOrientation;
-    const bool transformSwapsHandedness;
+    const bool transformSwapsHandedness; // 手性转换
 };
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_SHAPE_H
+#endif // PBRT_CORE_SHAPE_H

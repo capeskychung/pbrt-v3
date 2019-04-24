@@ -41,12 +41,14 @@
 // shapes/sphere.h*
 #include "shape.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
-// Sphere Declarations
-class Sphere : public Shape {
-  public:
-    // Sphere Public Methods
+// Sphere 声明
+class Sphere : public Shape
+{
+public:
+    // Sphere 公有方法
     Sphere(const Transform *ObjectToWorld, const Transform *WorldToObject,
            bool reverseOrientation, Float radius, Float zMin, Float zMax,
            Float phiMax)
@@ -68,11 +70,11 @@ class Sphere : public Shape {
     Float Pdf(const Interaction &ref, const Vector3f &wi) const;
     Float SolidAngle(const Point3f &p, int nSamples) const;
 
-  private:
-    // Sphere Private Data
-    const Float radius;
-    const Float zMin, zMax;
-    const Float thetaMin, thetaMax, phiMax;
+private:
+    // Sphere 私有数据
+    const Float radius;                     // 半径
+    const Float zMin, zMax;                 // 沿经线切除，即大于zMax平面和小于zMin平面将被切除
+    const Float thetaMin, thetaMax, phiMax; // 最小纬度，最大纬度，最大经度，均为弧度制
 };
 
 std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
@@ -80,6 +82,6 @@ std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
                                          bool reverseOrientation,
                                          const ParamSet &params);
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_SHAPES_SPHERE_H
+#endif // PBRT_SHAPES_SPHERE_H

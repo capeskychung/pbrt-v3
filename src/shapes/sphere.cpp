@@ -30,7 +30,6 @@
 
  */
 
-
 // shapes/sphere.cpp*
 #include "shapes/sphere.h"
 #include "sampling.h"
@@ -38,20 +37,23 @@
 #include "efloat.h"
 #include "stats.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
 // Sphere Method Definitions
-Bounds3f Sphere::ObjectBound() const {
+Bounds3f Sphere::ObjectBound() const
+{
     return Bounds3f(Point3f(-radius, -radius, zMin),
                     Point3f(radius, radius, zMax));
 }
 
 bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
-                       bool testAlphaTexture) const {
+                       bool testAlphaTexture) const
+{
     ProfilePhase p(Prof::ShapeIntersect);
     Float phi;
     Point3f pHit;
-    // Transform _Ray_ to object space
+    // Ray变换到对象空间
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
 
@@ -64,47 +66,61 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat b = 2 * (dx * ox + dy * oy + dz * oz);
     EFloat c = ox * ox + oy * oy + oz * oz - EFloat(radius) * EFloat(radius);
 
-    // Solve quadratic equation for _t_ values
+    // 求解二次方程，得到t
     EFloat t0, t1;
-    if (!Quadratic(a, b, c, &t0, &t1)) return false;
+    if (!Quadratic(a, b, c, &t0, &t1))
+        return false;
 
     // Check quadric shape _t0_ and _t1_ for nearest intersection
-    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
+    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0)
+        return false;
     EFloat tShapeHit = t0;
-    if (tShapeHit.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0)
+    {
         tShapeHit = t1;
-        if (tShapeHit.UpperBound() > ray.tMax) return false;
+        if (tShapeHit.UpperBound() > ray.tMax)
+            return false;
     }
 
     // Compute sphere hit position and $\phi$
+    // 计算相交点和phi
     pHit = ray((Float)tShapeHit);
 
     // Refine sphere intersection point
     pHit *= radius / Distance(pHit, Point3f(0, 0, 0));
-    if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
+    if (pHit.x == 0 && pHit.y == 0)
+        pHit.x = 1e-5f * radius;
     phi = std::atan2(pHit.y, pHit.x);
-    if (phi < 0) phi += 2 * Pi;
+    if (phi < 0)
+        phi += 2 * Pi;
 
     // Test sphere intersection against clipping parameters
+    // 检查相交点是否处于裁剪区域
     if ((zMin > -radius && pHit.z < zMin) || (zMax < radius && pHit.z > zMax) ||
-        phi > phiMax) {
-        if (tShapeHit == t1) return false;
-        if (t1.UpperBound() > ray.tMax) return false;
+        phi > phiMax)
+    {
+        if (tShapeHit == t1)
+            return false;
+        if (t1.UpperBound() > ray.tMax)
+            return false;
         tShapeHit = t1;
         // Compute sphere hit position and $\phi$
         pHit = ray((Float)tShapeHit);
 
         // Refine sphere intersection point
         pHit *= radius / Distance(pHit, Point3f(0, 0, 0));
-        if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
+        if (pHit.x == 0 && pHit.y == 0)
+            pHit.x = 1e-5f * radius;
         phi = std::atan2(pHit.y, pHit.x);
-        if (phi < 0) phi += 2 * Pi;
+        if (phi < 0)
+            phi += 2 * Pi;
         if ((zMin > -radius && pHit.z < zMin) ||
             (zMax < radius && pHit.z > zMax) || phi > phiMax)
             return false;
     }
 
     // Find parametric representation of sphere hit
+    // 计算球体交点的参数信息
     Float u = phi / phiMax;
     Float theta = std::acos(Clamp(pHit.z / radius, -1, 1));
     Float v = (theta - thetaMin) / (thetaMax - thetaMin);
@@ -143,19 +159,23 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                              (f * F - g * E) * invEGF2 * dpdv);
 
     // Compute error bounds for sphere intersection
+    // 计算球体交点的误差范围
     Vector3f pError = gamma(5) * Abs((Vector3f)pHit);
 
     // Initialize _SurfaceInteraction_ from parametric information
+    // 用参数信息初始化_SurfaceInteraction_
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
                                                  -ray.d, dpdu, dpdv, dndu, dndv,
                                                  ray.time, this));
 
     // Update _tHit_ for quadric intersection
+    // 更新交点对应的_tHit_
     *tHit = (Float)tShapeHit;
     return true;
 }
 
-bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
+bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const
+{
     ProfilePhase p(Prof::ShapeIntersectP);
     Float phi;
     Point3f pHit;
@@ -174,14 +194,18 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
     // Solve quadratic equation for _t_ values
     EFloat t0, t1;
-    if (!Quadratic(a, b, c, &t0, &t1)) return false;
+    if (!Quadratic(a, b, c, &t0, &t1))
+        return false;
 
     // Check quadric shape _t0_ and _t1_ for nearest intersection
-    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
+    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0)
+        return false;
     EFloat tShapeHit = t0;
-    if (tShapeHit.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0)
+    {
         tShapeHit = t1;
-        if (tShapeHit.UpperBound() > ray.tMax) return false;
+        if (tShapeHit.UpperBound() > ray.tMax)
+            return false;
     }
 
     // Compute sphere hit position and $\phi$
@@ -189,24 +213,31 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
     // Refine sphere intersection point
     pHit *= radius / Distance(pHit, Point3f(0, 0, 0));
-    if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
+    if (pHit.x == 0 && pHit.y == 0)
+        pHit.x = 1e-5f * radius;
     phi = std::atan2(pHit.y, pHit.x);
-    if (phi < 0) phi += 2 * Pi;
+    if (phi < 0)
+        phi += 2 * Pi;
 
     // Test sphere intersection against clipping parameters
     if ((zMin > -radius && pHit.z < zMin) || (zMax < radius && pHit.z > zMax) ||
-        phi > phiMax) {
-        if (tShapeHit == t1) return false;
-        if (t1.UpperBound() > ray.tMax) return false;
+        phi > phiMax)
+    {
+        if (tShapeHit == t1)
+            return false;
+        if (t1.UpperBound() > ray.tMax)
+            return false;
         tShapeHit = t1;
         // Compute sphere hit position and $\phi$
         pHit = ray((Float)tShapeHit);
 
         // Refine sphere intersection point
         pHit *= radius / Distance(pHit, Point3f(0, 0, 0));
-        if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
+        if (pHit.x == 0 && pHit.y == 0)
+            pHit.x = 1e-5f * radius;
         phi = std::atan2(pHit.y, pHit.x);
-        if (phi < 0) phi += 2 * Pi;
+        if (phi < 0)
+            phi += 2 * Pi;
         if ((zMin > -radius && pHit.z < zMin) ||
             (zMax < radius && pHit.z > zMax) || phi > phiMax)
             return false;
@@ -216,11 +247,13 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
 
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
-Interaction Sphere::Sample(const Point2f &u, Float *pdf) const {
+Interaction Sphere::Sample(const Point2f &u, Float *pdf) const
+{
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
     Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
-    if (reverseOrientation) it.n *= -1;
+    if (reverseOrientation)
+        it.n *= -1;
     // Reproject _pObj_ to sphere surface and compute _pObjError_
     pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
@@ -230,24 +263,28 @@ Interaction Sphere::Sample(const Point2f &u, Float *pdf) const {
 }
 
 Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
-                           Float *pdf) const {
+                           Float *pdf) const
+{
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
 
     // Sample uniformly on sphere if $\pt{}$ is inside it
     Point3f pOrigin =
         OffsetRayOrigin(ref.p, ref.pError, ref.n, pCenter - ref.p);
-    if (DistanceSquared(pOrigin, pCenter) <= radius * radius) {
+    if (DistanceSquared(pOrigin, pCenter) <= radius * radius)
+    {
         Interaction intr = Sample(u, pdf);
         Vector3f wi = intr.p - ref.p;
         if (wi.LengthSquared() == 0)
             *pdf = 0;
-        else {
+        else
+        {
             // Convert from area measure returned by Sample() call above to
             // solid angle measure.
             wi = Normalize(wi);
             *pdf *= DistanceSquared(ref.p, intr.p) / AbsDot(intr.n, -wi);
         }
-        if (std::isinf(*pdf)) *pdf = 0.f;
+        if (std::isinf(*pdf))
+            *pdf = 0.f;
         return intr;
     }
 
@@ -266,10 +303,11 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
     Float invSinThetaMax = 1 / sinThetaMax;
     Float cosThetaMax = std::sqrt(std::max((Float)0.f, 1 - sinThetaMax2));
 
-    Float cosTheta  = (cosThetaMax - 1) * u[0] + 1;
+    Float cosTheta = (cosThetaMax - 1) * u[0] + 1;
     Float sinTheta2 = 1 - cosTheta * cosTheta;
 
-    if (sinThetaMax2 < 0.00068523f /* sin^2(1.5 deg) */) {
+    if (sinThetaMax2 < 0.00068523f /* sin^2(1.5 deg) */)
+    {
         /* Fall back to a Taylor series expansion for small angles, where
            the standard approach suffers from severe cancellation errors */
         sinTheta2 = sinThetaMax2 * u[0];
@@ -278,8 +316,8 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
 
     // Compute angle $\alpha$ from center of sphere to sampled point on surface
     Float cosAlpha = sinTheta2 * invSinThetaMax +
-        cosTheta * std::sqrt(std::max((Float)0.f, 1.f - sinTheta2 * invSinThetaMax * invSinThetaMax));
-    Float sinAlpha = std::sqrt(std::max((Float)0.f, 1.f - cosAlpha*cosAlpha));
+                     cosTheta * std::sqrt(std::max((Float)0.f, 1.f - sinTheta2 * invSinThetaMax * invSinThetaMax));
+    Float sinAlpha = std::sqrt(std::max((Float)0.f, 1.f - cosAlpha * cosAlpha));
     Float phi = u[1] * 2 * Pi;
 
     // Compute surface normal and sampled point on sphere
@@ -292,7 +330,8 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
     it.p = pWorld;
     it.pError = gamma(5) * Abs((Vector3f)pWorld);
     it.n = Normal3f(nWorld);
-    if (reverseOrientation) it.n *= -1;
+    if (reverseOrientation)
+        it.n *= -1;
 
     // Uniform cone PDF.
     *pdf = 1 / (2 * Pi * (1 - cosThetaMax));
@@ -300,7 +339,8 @@ Interaction Sphere::Sample(const Interaction &ref, const Point2f &u,
     return it;
 }
 
-Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {
+Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const
+{
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
     // Return uniform PDF if point is inside sphere
     Point3f pOrigin =
@@ -314,7 +354,8 @@ Float Sphere::Pdf(const Interaction &ref, const Vector3f &wi) const {
     return UniformConePdf(cosThetaMax);
 }
 
-Float Sphere::SolidAngle(const Point3f &p, int nSamples) const {
+Float Sphere::SolidAngle(const Point3f &p, int nSamples) const
+{
     Point3f pCenter = (*ObjectToWorld)(Point3f(0, 0, 0));
     if (DistanceSquared(p, pCenter) <= radius * radius)
         return 4 * Pi;
@@ -326,7 +367,8 @@ Float Sphere::SolidAngle(const Point3f &p, int nSamples) const {
 std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
                                          const Transform *w2o,
                                          bool reverseOrientation,
-                                         const ParamSet &params) {
+                                         const ParamSet &params)
+{
     Float radius = params.FindOneFloat("radius", 1.f);
     Float zmin = params.FindOneFloat("zmin", -radius);
     Float zmax = params.FindOneFloat("zmax", radius);
@@ -335,4 +377,4 @@ std::shared_ptr<Shape> CreateSphereShape(const Transform *o2w,
                                     zmax, phimax);
 }
 
-}  // namespace pbrt
+} // namespace pbrt

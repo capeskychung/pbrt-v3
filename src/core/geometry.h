@@ -62,7 +62,7 @@ inline bool isNaN(const int x)
 template <typename T>
 class Vector2
 {
-  public:
+public:
     // Vector2 公有方法
     Vector2() { x = y = 0; }
     Vector2(T xx, T yy) : x(xx), y(yy) { DCHECK(!HasNaNs()); }
@@ -186,7 +186,7 @@ inline std::ostream &operator<<(std::ostream &os, const Vector2<Float> &v)
 template <typename T>
 class Vector3
 {
-  public:
+public:
     // Vector3 公有方法
     T operator[](int i) const
     {
@@ -329,7 +329,7 @@ typedef Vector3<int> Vector3i;
 template <typename T>
 class Point2
 {
-  public:
+public:
     // Point2 公有方法
     explicit Point2(const Point3<T> &p) : x(p.x), y(p.y) { DCHECK(!HasNaNs()); }
     Point2() { x = y = 0; }
@@ -495,7 +495,7 @@ inline std::ostream &operator<<(std::ostream &os, const Point2<Float> &v)
 template <typename T>
 class Point3
 {
-  public:
+public:
     // Point3 公有方法
     Point3() { x = y = z = 0; }
     Point3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
@@ -666,7 +666,7 @@ typedef Point3<int> Point3i;
 template <typename T>
 class Normal3
 {
-  public:
+public:
     // Normal3 公有方法
     Normal3() { x = y = z = 0; }
     Normal3(T xx, T yy, T zz) : x(xx), y(yy), z(zz) { DCHECK(!HasNaNs()); }
@@ -816,7 +816,7 @@ typedef Normal3<Float> Normal3f;
 template <typename T>
 class Bounds2
 {
-  public:
+public:
     // Bounds2 公有方法
     Bounds2()
     {
@@ -910,7 +910,7 @@ class Bounds2
 template <typename T>
 class Bounds3
 {
-  public:
+public:
     // Bounds3 公有方法
     Bounds3()
     {
@@ -1002,11 +1002,10 @@ class Bounds3
     {
         return Bounds3<U>((Point3<U>)pMin, (Point3<U>)pMax);
     }
-
-    bool IntersectP(const Ray &ray, Float *hitt0 = nullptr,
-                    Float *hitt1 = nullptr) const; // 射线求交，返回两个交点
-    inline bool IntersectP(const Ray &ray, const Vector3f &invDir,
-                           const int dirIsNeg[3]) const; // 射线求交
+    // 射线求交，返回两个交点
+    bool IntersectP(const Ray &ray, Float *hitt0 = nullptr, Float *hitt1 = nullptr) const;
+    // 射线求交，不返回交点信息，速度更快
+    inline bool IntersectP(const Ray &ray, const Vector3f &invDir, const int dirIsNeg[3]) const;
     friend std::ostream &operator<<(std::ostream &os, const Bounds3<T> &b)
     {
         os << "[ " << b.pMin << " - " << b.pMax << " ]";
@@ -1025,7 +1024,7 @@ typedef Bounds3<int> Bounds3i;
 
 class Bounds2iIterator : public std::forward_iterator_tag
 {
-  public:
+public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)
         : p(pt), bounds(&b) {}
     Bounds2iIterator operator++() // 前置++，返回操作之后的值
@@ -1050,7 +1049,7 @@ class Bounds2iIterator : public std::forward_iterator_tag
 
     Point2i operator*() const { return p; }
 
-  private:
+private:
     void advance()
     {
         ++p.x;
@@ -1067,7 +1066,7 @@ class Bounds2iIterator : public std::forward_iterator_tag
 // Ray 定义
 class Ray
 {
-  public:
+public:
     // Ray 公有方法
     Ray() : tMax(Infinity), time(0.f), medium(nullptr) {}
     Ray(const Point3f &o, const Vector3f &d, Float tMax = Infinity,
@@ -1092,7 +1091,7 @@ class Ray
 
 class RayDifferential : public Ray
 {
-  public:
+public:
     // RayDifferential 公有方法
     RayDifferential() { hasDifferentials = false; }
     RayDifferential(const Point3f &o, const Vector3f &d, Float tMax = Infinity,

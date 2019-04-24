@@ -322,8 +322,10 @@ inline Float Mod(Float a, Float b) {
     return std::fmod(a, b);
 }
 
+// 角度转换为弧度
 inline Float Radians(Float deg) { return (Pi / 180) * deg; }
 
+// 弧度转换为角度
 inline Float Degrees(Float rad) { return (180 / Pi) * rad; }
 
 inline Float Log2(Float x) {
