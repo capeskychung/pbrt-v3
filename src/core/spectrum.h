@@ -101,11 +101,13 @@ extern const Float RGBIllum2SpectRed[nRGB2SpectSamples];
 extern const Float RGBIllum2SpectGreen[nRGB2SpectSamples];
 extern const Float RGBIllum2SpectBlue[nRGB2SpectSamples];
 
+// Spectrum Declarations
 // Spectrum 声明
 template <int nSpectrumSamples>
 class CoefficientSpectrum
 {
-  public:
+public:
+    // CoefficientSpectrum Public Methods
     // CoefficientSpectrum 公有方法
     CoefficientSpectrum(Float v = 0.f)
     {
@@ -390,17 +392,20 @@ class CoefficientSpectrum
         return c[i];
     }
 
+    // CoefficientSpectrum Public Data
     // CoefficientSpectrum 公有数据
     static const int nSamples = nSpectrumSamples;
 
-  protected:
+protected:
+    // CoefficientSpectrum Protected Data
     // CoefficientSpectrum 受保护数据
     Float c[nSpectrumSamples];
 };
 
 class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples>
 {
-  public:
+public:
+    // SampledSpectrum Public Methods
     // SampledSpectrum 公有方法
     SampledSpectrum(Float v = 0.f) : CoefficientSpectrum(v) {}
     SampledSpectrum(const CoefficientSpectrum<nSpectralSamples> &v)
@@ -537,7 +542,7 @@ class SampledSpectrum : public CoefficientSpectrum<nSpectralSamples>
     SampledSpectrum(const RGBSpectrum &r,
                     SpectrumType type = SpectrumType::Reflectance);
 
-  private:
+private:
     // SampledSpectrum Private Data
     static SampledSpectrum X, Y, Z;
     static SampledSpectrum rgbRefl2SpectWhite, rgbRefl2SpectCyan;
@@ -554,7 +559,7 @@ class RGBSpectrum : public CoefficientSpectrum<3>
 {
     using CoefficientSpectrum<3>::c;
 
-  public:
+public:
     // RGBSpectrum Public Methods
     RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
     RGBSpectrum(const CoefficientSpectrum<3> &v) : CoefficientSpectrum<3>(v) {}

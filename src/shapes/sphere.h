@@ -44,10 +44,12 @@
 namespace pbrt
 {
 
+// Sphere Declarations
 // Sphere 声明
 class Sphere : public Shape
 {
 public:
+    // Sphere Public Methods
     // Sphere 公有方法
     Sphere(const Transform *ObjectToWorld, const Transform *WorldToObject,
            bool reverseOrientation, Float radius, Float zMin, Float zMax,
@@ -71,6 +73,7 @@ public:
     Float SolidAngle(const Point3f &p, int nSamples) const;
 
 private:
+    // Sphere Private Data
     // Sphere 私有数据
     const Float radius;                     // 半径
     const Float zMin, zMax;                 // 沿经线切除，即大于zMax平面和小于zMin平面将被切除

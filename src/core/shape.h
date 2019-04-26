@@ -48,10 +48,12 @@
 namespace pbrt
 {
 
+// Shape Declarations
 // Shape 声明
 class Shape
 {
 public:
+    // Shape Interface
     // Shape 接口
     Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
           bool reverseOrientation);
@@ -87,6 +89,7 @@ public:
     // used in this case.
     virtual Float SolidAngle(const Point3f &p, int nSamples = 512) const;
 
+    // Shape Public Data
     // Shape 公有数据
     const Transform *ObjectToWorld, *WorldToObject; // 模型空间和世界空间的转换
     const bool reverseOrientation;

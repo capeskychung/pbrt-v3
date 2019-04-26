@@ -44,15 +44,18 @@
 
 namespace pbrt {
 
+// Filter Declarations
 // Filter 声明
 class Filter {
   public:
+    // Filter Interface
     // Filter 接口
     virtual ~Filter();
     Filter(const Vector2f &radius)
         : radius(radius), invRadius(Vector2f(1 / radius.x, 1 / radius.y)) {}
     virtual Float Evaluate(const Point2f &p) const = 0; // 求值
 
+    // Filter Public Data
     // Filter 公有数据
     const Vector2f radius, invRadius;
 };

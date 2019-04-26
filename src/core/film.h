@@ -49,6 +49,7 @@
 namespace pbrt
 {
 
+// FilmTilePixel Declarations
 // FilmTilePixel 声明
 struct FilmTilePixel
 {
@@ -56,10 +57,12 @@ struct FilmTilePixel
     Float filterWeightSum = 0.f;
 };
 
+// Film Declarations
 // Film 声明
 class Film
 {
-  public:
+public:
+    // Film Public Methods
     // Film 公有方法
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
@@ -68,12 +71,13 @@ class Film
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
-    void MergeFilmTile(std::unique_ptr<FilmTile> tile); // 合并FilmTile
+    void MergeFilmTile(std::unique_ptr<FilmTile> tile);
     void SetImage(const Spectrum *img) const;
     void AddSplat(const Point2f &p, Spectrum v);
     void WriteImage(Float splatScale = 1);
     void Clear();
 
+    // Film Public Data
     // Film 公有数据
     const Point2i fullResolution;   // 分辨率
     const Float diagonal;           // 对角线长度
@@ -81,7 +85,8 @@ class Film
     const std::string filename;     // 文件名
     Bounds2i croppedPixelBounds;
 
-  private:
+private:
+    // Film Private Data
     // Film 私有数据
     struct Pixel
     {
@@ -91,14 +96,15 @@ class Film
         AtomicFloat splatXYZ[3];
         Float pad;
     };
-    std::unique_ptr<Pixel[]> pixels; // 所有像素存储在一维数组中
+    std::unique_ptr<Pixel[]> pixels;
     static PBRT_CONSTEXPR int filterTableWidth = 16;
     Float filterTable[filterTableWidth * filterTableWidth];
     std::mutex mutex;
     const Float scale;
     const Float maxSampleLuminance;
 
-    // Film 私有方法
+    // Film Private Methods
+    // File 私有方法
     Pixel &GetPixel(const Point2i &p)
     {
         CHECK(InsideExclusive(p, croppedPixelBounds));
@@ -111,7 +117,8 @@ class Film
 
 class FilmTile
 {
-  public:
+public:
+    // FilmTile Public Methods
     // FilmTile 公有方法
     FilmTile(const Bounds2i &pixelBounds, const Vector2f &filterRadius,
              const Float *filterTable, int filterTableSize,
@@ -189,7 +196,7 @@ class FilmTile
     }
     Bounds2i GetPixelBounds() const { return pixelBounds; }
 
-  private:
+private:
     // FilmTile Private Data
     const Bounds2i pixelBounds;
     const Vector2f filterRadius, invFilterRadius;

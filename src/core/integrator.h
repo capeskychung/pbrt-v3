@@ -47,13 +47,17 @@
 #include "sampler.h"
 #include "material.h"
 
-namespace pbrt {
+namespace pbrt
+{
 
+// Integrator Declarations
 // Integrator 声明
-class Integrator {
-  public:
+class Integrator
+{
+public:
+    // Integrator Interface
     // Integrator 接口
-    virtual ~Integrator(); // 虚析构函数
+    virtual ~Integrator();                       // 虚析构函数
     virtual void Render(const Scene &scene) = 0; // 纯虚函数
 };
 
@@ -73,9 +77,12 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uShading,
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene);
 
+// SamplerIntegrator Declarations
 // SamplerIntegrator 声明
-class SamplerIntegrator : public Integrator {
-  public:
+class SamplerIntegrator : public Integrator
+{
+public:
+    // SamplerIntegrator Public Methods
     // SamplerIntegrator 公有方法
     SamplerIntegrator(std::shared_ptr<const Camera> camera,
                       std::shared_ptr<Sampler> sampler,
@@ -95,16 +102,18 @@ class SamplerIntegrator : public Integrator {
                               const Scene &scene, Sampler &sampler,
                               MemoryArena &arena, int depth) const;
 
-  protected:
+protected:
+    // SamplerIntegrator Protected Data
     // SamplerIntegrator 受保护数据
     std::shared_ptr<const Camera> camera; // 相机
 
-  private:
+private:
+    // SamplerIntegrator Private Data
     // SamplerIntegrator 私有数据
     std::shared_ptr<Sampler> sampler; // 采样器
-    const Bounds2i pixelBounds; // 包围盒，平面，int型
+    const Bounds2i pixelBounds;       // 包围盒，平面，int型
 };
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_INTEGRATOR_H
+#endif // PBRT_CORE_INTEGRATOR_H

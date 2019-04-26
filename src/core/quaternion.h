@@ -46,11 +46,12 @@
 namespace pbrt
 {
 
-// 四元数
+// Quaternion Declarations
 // Quaternion 声明
 struct Quaternion
 {
     // Quaternion 公有方法
+    // Quaternion Public Methods
     Quaternion() : v(0, 0, 0), w(1) {}
     Quaternion &operator+=(const Quaternion &q)
     {
@@ -118,6 +119,7 @@ struct Quaternion
         return os;
     }
 
+    // Quaternion Public Data
     // Quaternion 公有数据
     Vector3f v;
     Float w;
@@ -125,6 +127,7 @@ struct Quaternion
 
 Quaternion Slerp(Float t, const Quaternion &q1, const Quaternion &q2);
 
+// Quaternion Inline Functions
 // Quaternion 内联函数
 inline Quaternion operator*(Float f, const Quaternion &q) { return q * f; }
 

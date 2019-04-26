@@ -38,8 +38,10 @@
 
 using namespace pbrt;
 
-static void usage(const char *msg = nullptr) {
-    if (msg) fprintf(stderr, "pbrt: %s\n\n", msg);
+static void usage(const char *msg = nullptr)
+{
+    if (msg)
+        fprintf(stderr, "pbrt: %s\n\n", msg);
 
     fprintf(stderr, R"(usage: pbrt [<options>] <filename.pbrt...>
 Rendering options:
@@ -70,74 +72,115 @@ Reformatting options:
 }
 
 // main program
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     google::InitGoogleLogging(argv[0]);
-    FLAGS_stderrthreshold = 1;  // Warning and above.
+    FLAGS_stderrthreshold = 1; // Warning and above.
 
     Options options;
     std::vector<std::string> filenames;
     // Process command-line arguments
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         // 指定线程数
-        if (!strcmp(argv[i], "--nthreads") || !strcmp(argv[i], "-nthreads")) {
-            if (i + 1 == argc) usage("missing value after --nthreads argument");
+        if (!strcmp(argv[i], "--nthreads") || !strcmp(argv[i], "-nthreads"))
+        {
+            if (i + 1 == argc)
+                usage("missing value after --nthreads argument");
             options.nThreads = atoi(argv[++i]);
-        } else if (!strncmp(argv[i], "--nthreads=", 11)) {  //
+        }
+        else if (!strncmp(argv[i], "--nthreads=", 11))
+        { //
             options.nThreads = atoi(&argv[i][11]);
-        } else if (!strcmp(argv[i], "--outfile") ||
-                   !strcmp(argv[i], "-outfile")) {  // 指定输出文件名
-            if (i + 1 == argc) usage("missing value after --outfile argument");
+        }
+        else if (!strcmp(argv[i], "--outfile") ||
+                 !strcmp(argv[i], "-outfile"))
+        { // 指定输出文件名
+            if (i + 1 == argc)
+                usage("missing value after --outfile argument");
             options.imageFile = argv[++i];
-        } else if (!strcmp(argv[i], "--cropwindow") ||
-                   !strcmp(argv[i], "-cropwindow")) {  // 裁剪窗口
+        }
+        else if (!strcmp(argv[i], "--cropwindow") ||
+                 !strcmp(argv[i], "-cropwindow"))
+        { // 裁剪窗口
             if (i + 4 >= argc)
                 usage("missing value after --cropwindow argument");
             options.cropWindow[0][0] = atof(argv[++i]);
             options.cropWindow[0][1] = atof(argv[++i]);
             options.cropWindow[1][0] = atof(argv[++i]);
             options.cropWindow[1][1] = atof(argv[++i]);
-        } else if (!strncmp(argv[i], "--outfile=", 10)) {
+        }
+        else if (!strncmp(argv[i], "--outfile=", 10))
+        {
             options.imageFile = &argv[i][10];
-        } else if (!strcmp(argv[i], "--logdir") ||
-                   !strcmp(argv[i], "-logdir")) {  // 日志目录
-            if (i + 1 == argc) usage("missing value after --logdir argument");
+        }
+        else if (!strcmp(argv[i], "--logdir") ||
+                 !strcmp(argv[i], "-logdir"))
+        { // 日志目录
+            if (i + 1 == argc)
+                usage("missing value after --logdir argument");
             FLAGS_log_dir = argv[++i];
-        } else if (!strncmp(argv[i], "--logdir=", 9)) {
+        }
+        else if (!strncmp(argv[i], "--logdir=", 9))
+        {
             FLAGS_log_dir = &argv[i][9];
-        } else if (!strcmp(argv[i], "--minloglevel") ||
-                   !strcmp(argv[i], "-minloglevel")) {  //
+        }
+        else if (!strcmp(argv[i], "--minloglevel") ||
+                 !strcmp(argv[i], "-minloglevel"))
+        { //
             if (i + 1 == argc)
                 usage("missing value after --minloglevel argument");
             FLAGS_minloglevel = atoi(argv[++i]);
-        } else if (!strncmp(argv[i], "--minloglevel=", 14)) {
+        }
+        else if (!strncmp(argv[i], "--minloglevel=", 14))
+        {
             FLAGS_minloglevel = atoi(&argv[i][14]);
-        } else if (!strcmp(argv[i], "--quick") ||
-                   !strcmp(argv[i], "-quick")) {  // 快速模式
+        }
+        else if (!strcmp(argv[i], "--quick") ||
+                 !strcmp(argv[i], "-quick"))
+        { // 快速模式
             options.quickRender = true;
-        } else if (!strcmp(argv[i], "--quiet") ||
-                   !strcmp(argv[i], "-quiet")) {  // 安静模式
+        }
+        else if (!strcmp(argv[i], "--quiet") ||
+                 !strcmp(argv[i], "-quiet"))
+        { // 安静模式
             options.quiet = true;
-        } else if (!strcmp(argv[i], "--cat") || !strcmp(argv[i], "-cat")) {
+        }
+        else if (!strcmp(argv[i], "--cat") || !strcmp(argv[i], "-cat"))
+        {
             options.cat = true;
-        } else if (!strcmp(argv[i], "--toply") || !strcmp(argv[i], "-toply")) {
+        }
+        else if (!strcmp(argv[i], "--toply") || !strcmp(argv[i], "-toply"))
+        {
             options.toPly = true;
-        } else if (!strcmp(argv[i], "--v") || !strcmp(argv[i], "-v")) {
-            if (i + 1 == argc) usage("missing value after --v argument");
+        }
+        else if (!strcmp(argv[i], "--v") || !strcmp(argv[i], "-v"))
+        {
+            if (i + 1 == argc)
+                usage("missing value after --v argument");
             FLAGS_v = atoi(argv[++i]);
-        } else if (!strncmp(argv[i], "--v=", 4)) {
+        }
+        else if (!strncmp(argv[i], "--v=", 4))
+        {
             FLAGS_v = atoi(argv[i] + 4);
-        } else if (!strcmp(argv[i], "--logtostderr")) {
+        }
+        else if (!strcmp(argv[i], "--logtostderr"))
+        {
             FLAGS_logtostderr = true;
-        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
-                   !strcmp(argv[i], "-h")) {  // 帮助
+        }
+        else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-help") ||
+                 !strcmp(argv[i], "-h"))
+        { // 帮助
             usage();
             return 0;
-        } else
-            filenames.push_back(argv[i]);  // 场景文件
+        }
+        else
+            filenames.push_back(argv[i]); // 场景文件
     }
 
     // Print welcome banner
-    if (!options.quiet && !options.cat && !options.toPly) {
+    if (!options.quiet && !options.cat && !options.toPly)
+    {
         if (sizeof(void *) == 4)
             printf(
                 "*** WARNING: This is a 32-bit build of pbrt. It will crash "
@@ -147,7 +190,7 @@ int main(int argc, char *argv[]) {
 #ifndef NDEBUG
         LOG(INFO) << "Running debug build";
         printf("*** DEBUG BUILD ***\n");
-#endif  // !NDEBUG
+#endif // !NDEBUG
         printf(
             "Copyright (c)1998-2018 Matt Pharr, Greg Humphreys, and Wenzel "
             "Jakob.\n");
@@ -157,15 +200,21 @@ int main(int argc, char *argv[]) {
         printf("See the file LICENSE.txt for the conditions of the license.\n");
         fflush(stdout);
     }
-    pbrtInit(options);  // 系统级的初始化
+    pbrtInit(options); // 系统级的初始化
     // Process scene description
-    if (filenames.empty()) {
+    if (filenames.empty())
+    {
+        // Parse scene from standard input
         // 没有文件，从标准输入读取场景
         pbrtParseFile("-");
-    } else {
-        // 读取场景文件，并渲染，文件解析错误则返回False
-        for (const std::string &f : filenames) pbrtParseFile(f);
     }
-    pbrtCleanup();  // 清理
+    else
+    {
+        // Parse scene from input files
+        // 读取场景文件，并渲染，文件解析错误则返回False
+        for (const std::string &f : filenames)
+            pbrtParseFile(f);
+    }
+    pbrtCleanup(); // 清理
     return 0;
 }

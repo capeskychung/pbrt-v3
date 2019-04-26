@@ -47,9 +47,11 @@
 namespace pbrt
 {
 
+// Matrix4x4 Declarations
 // Matrix4x4 声明
 struct Matrix4x4
 {
+    // Matrix4x4 Public Methods
     // Matrix4x4 公有方法
     Matrix4x4()
     {
@@ -144,10 +146,12 @@ struct Matrix4x4
     Float m[4][4];
 };
 
+// Transform Declarations
 // Transform 声明
 class Transform
 {
 public:
+    // Transform Public Methods
     // Transform 公有方法
     Transform() {}
 
@@ -287,6 +291,7 @@ public:
 
 private:
     // Transform 私有数据
+    // Transform 私有数据
     Matrix4x4 m, mInv; // 存储逆矩阵是为了方便计算，法线变换时需要使用逆矩阵
     friend class AnimatedTransform;
     friend struct Quaternion;
@@ -323,6 +328,7 @@ Transform Perspective(Float fov, Float znear, Float zfar);
 
 bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0, Float *x1);
 
+// Transform Inline Functions
 // Transform 内联函数
 
 // ()重载，Point3变换
@@ -527,10 +533,12 @@ inline RayDifferential Transform::operator()(const RayDifferential &r) const
     return ret;
 }
 
+// AnimatedTransform Declarations
 // AnimatedTransform 声明
 class AnimatedTransform
 {
 public:
+    // AnimatedTransform Public Methods
     // AnimatedTransform 公有方法
     AnimatedTransform(const Transform *startTransform, Float startTime,
                       const Transform *endTransform, Float endTime);
@@ -556,14 +564,15 @@ public:
     Bounds3f BoundPointMotion(const Point3f &p) const;
 
 private:
+    // AnimatedTransform Private Data
     // AnimatedTransform 私有数据
     const Transform *startTransform, *endTransform; // 起点和终点
-    const Float startTime, endTime; // 起点时间和终点时间
-    const bool actuallyAnimated; // 如果起点和终点相同，则为False，不需要计算插值
-    Vector3f T[2]; // 起点和终点的平移变换
-    Quaternion R[2]; // 起点和终点的旋转变换
-    Matrix4x4 S[2]; // 起点和终点的缩放变换
-    bool hasRotation; // 如果不包含旋转，可以直接对矩阵插值，而不需要转换为四元数
+    const Float startTime, endTime;                 // 起点时间和终点时间
+    const bool actuallyAnimated;                    // 如果起点和终点相同，则为False，不需要计算插值
+    Vector3f T[2];                                  // 起点和终点的平移变换
+    Quaternion R[2];                                // 起点和终点的旋转变换
+    Matrix4x4 S[2];                                 // 起点和终点的缩放变换
+    bool hasRotation;                               // 如果不包含旋转，可以直接对矩阵插值，而不需要转换为四元数
     // 导数项
     struct DerivativeTerm
     {

@@ -48,9 +48,11 @@ namespace pbrt
 
 STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 
+// Integrator Method Definitions
 // Integrator 方法定义
 Integrator::~Integrator() {}
 
+// Integrator Utility Functions
 // Integrator 实用函数
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 MemoryArena &arena, Sampler &sampler,
@@ -260,12 +262,15 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
         new Distribution1D(&lightPower[0], lightPower.size()));
 }
 
+// SamplerIntegrator Method Definitions
 // SamplerIntegrator 方法定义
 void SamplerIntegrator::Render(const Scene &scene)
 {
     Preprocess(scene, *sampler); // 预处理
+    // Render image tiles in parallel
     // 并行渲染图像块
 
+    // Compute number of tiles, _nTiles_, to use for parallel rendering
     // 计算图像块的数量 _nTiles_, 用于并行渲染
     Bounds2i sampleBounds = camera->film->GetSampleBounds(); // sampleBounds表示采样范围的边界
     Vector2i sampleExtent = sampleBounds.Diagonal();         // 采样范围的长宽
@@ -279,15 +284,19 @@ void SamplerIntegrator::Render(const Scene &scene)
         // 传递一个lambda表达式给线程池，类似传递一个函数指针，这个函数会被调用多次（一个tile一次）
         ParallelFor2D(
             [&](Point2i tile) {
+                // Render section of image corresponding to _tile_
                 // 渲染对应的图像块
 
+                // Allocate _MemoryArena_ for tile
                 // 为图像块配置内存池
                 MemoryArena arena;
 
+                // Get sampler instance for tile
                 // 获得采样器实例
                 int seed = tile.y * nTiles.x + tile.x;                       // seed表示当前是第几个tile
                 std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed); // 因为Sampler会被并发调用，所以必须为每个线程单独拷贝一份
 
+                // Compute sample bounds for tile
                 // 计算当前tile的边界
                 int x0 = sampleBounds.pMin.x + tile.x * tileSize;      // tile左边界
                 int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x); // tile右边界，需要和最大值比对，存在剩余像素不足一个tile的情况
@@ -296,9 +305,11 @@ void SamplerIntegrator::Render(const Scene &scene)
                 Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1)); // 当前tile的边界
                 LOG(INFO) << "Starting image tile " << tileBounds;
 
+                // Get _FilmTile_ for tile
                 // FilmTile是对应块的渲染结果，即最终图像的一部分
                 std::unique_ptr<FilmTile> filmTile = camera->film->GetFilmTile(tileBounds);
 
+                // Loop over pixels in tile to render them
                 // 循环，渲染tile里每个像素
                 for (Point2i pixel : tileBounds)
                 {
@@ -316,10 +327,12 @@ void SamplerIntegrator::Render(const Scene &scene)
 
                     do
                     {
+                        // Initialize _CameraSample_ for current sample
                         // 初始化CameraSample，它存储了当前在film平面上的采样点，以便于生成采样光线；
                         // 存储了采样时间，用于模拟运动物体；存储了镜片位置，用于模拟光圈虚化。
                         CameraSample cameraSample = tileSampler->GetCameraSample(pixel);
 
+                        // Generate camera ray for current sample
                         // 为当前采样点生成采样光线，RayDifferential相比Ray多了两条光线，它们分别在x方向和y方向上偏移一些，用于纹理抗锯齿
                         RayDifferential ray;
                         Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray); // rayWeight为权重
@@ -331,6 +344,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                         if (rayWeight > 0)
                             L = Li(ray, scene, *tileSampler, arena);
 
+                        // Issue warning if unexpected radiance value returned
                         // 如果采样结果错误，输出警告
                         if (L.HasNaNs()) // 如果采样结果不是数字
                         {
@@ -361,15 +375,18 @@ void SamplerIntegrator::Render(const Scene &scene)
                         }
                         VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " << ray << " -> L = " << L;
 
+                        // Add camera ray's contribution to image
                         // 添加采样光线对图像的贡献
                         filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
 
+                        // Free _MemoryArena_ memory from computing image sample value
                         // 释放内存池
                         arena.Reset();
                     } while (tileSampler->StartNextSample());
                 }
                 LOG(INFO) << "Finished image tile " << tileBounds;
 
+                // Merge image tile into _Film_
                 // 用右值引用，把filmtile里的动态资源转移过去
                 camera->film->MergeFilmTile(std::move(filmTile));
                 reporter.Update();

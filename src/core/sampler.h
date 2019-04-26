@@ -44,11 +44,15 @@
 #include "rng.h"
 #include <inttypes.h>
 
-namespace pbrt {
+namespace pbrt
+{
 
+// Sampler Declarations
 // Sampler 声明
-class Sampler {
-  public:
+class Sampler
+{
+public:
+    // Sampler Interface
     // Sampler 接口
     virtual ~Sampler();
     Sampler(int64_t samplesPerPixel);
@@ -64,16 +68,19 @@ class Sampler {
     virtual bool StartNextSample();
     virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
     virtual bool SetSampleNumber(int64_t sampleNum);
-    std::string StateString() const {
-      return StringPrintf("(%d,%d), sample %" PRId64, currentPixel.x,
-                          currentPixel.y, currentPixelSampleIndex);
+    std::string StateString() const
+    {
+        return StringPrintf("(%d,%d), sample %" PRId64, currentPixel.x,
+                            currentPixel.y, currentPixelSampleIndex);
     }
     int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
 
+    // Sampler Public Data
     // Sampler 公有数据
     const int64_t samplesPerPixel;
 
-  protected:
+protected:
+    // Sampler Protected Data
     // Sampler 受保护数据
     Point2i currentPixel;
     int64_t currentPixelSampleIndex;
@@ -81,13 +88,16 @@ class Sampler {
     std::vector<std::vector<Float>> sampleArray1D;
     std::vector<std::vector<Point2f>> sampleArray2D;
 
-  private:
+private:
+    // Sampler Private Data
     // Sampler 私有数据
     size_t array1DOffset, array2DOffset;
 };
 
-class PixelSampler : public Sampler {
-  public:
+class PixelSampler : public Sampler
+{
+public:
+    // PixelSampler Public Methods
     // PixelSampler 公有方法
     PixelSampler(int64_t samplesPerPixel, int nSampledDimensions);
     bool StartNextSample();
@@ -95,7 +105,8 @@ class PixelSampler : public Sampler {
     Float Get1D();
     Point2f Get2D();
 
-  protected:
+protected:
+    // PixelSampler Protected Data
     // PixelSampler 受保护数据
     std::vector<std::vector<Float>> samples1D;
     std::vector<std::vector<Point2f>> samples2D;
@@ -103,8 +114,10 @@ class PixelSampler : public Sampler {
     RNG rng;
 };
 
-class GlobalSampler : public Sampler {
-  public:
+class GlobalSampler : public Sampler
+{
+public:
+    // GlobalSampler Public Methods
     // GlobalSampler 公有方法
     bool StartNextSample();
     void StartPixel(const Point2i &);
@@ -115,7 +128,8 @@ class GlobalSampler : public Sampler {
     virtual int64_t GetIndexForSample(int64_t sampleNum) const = 0;
     virtual Float SampleDimension(int64_t index, int dimension) const = 0;
 
-  private:
+private:
+    // GlobalSampler Private Data
     // GlobalSampler 私有数据
     int dimension;
     int64_t intervalSampleIndex;
@@ -123,6 +137,6 @@ class GlobalSampler : public Sampler {
     int arrayEndDim;
 };
 
-}  // namespace pbrt
+} // namespace pbrt
 
-#endif  // PBRT_CORE_SAMPLER_H
+#endif // PBRT_CORE_SAMPLER_H

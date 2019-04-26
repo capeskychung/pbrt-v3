@@ -49,15 +49,17 @@
 namespace pbrt
 {
 
+// Parallel Declarations
 // Parallel 声明
 class AtomicFloat
 {
-  public:
+public:
+    // AtomicFloat Public Methods
     // AtomicFloat 公有方法
     explicit AtomicFloat(Float v = 0) { bits = FloatToBits(v); }
-    
+
     // Float类型转换运算符
-    operator Float() const { return BitsToFloat(bits); } 
+    operator Float() const { return BitsToFloat(bits); }
 
     // 赋值
     Float operator=(Float v)
@@ -80,7 +82,8 @@ class AtomicFloat
         } while (!bits.compare_exchange_weak(oldBits, newBits));
     }
 
-  private:
+private:
+// AtomicFloat Private Data
 // AtomicFloat 私有数据
 #ifdef PBRT_FLOAT_AS_DOUBLE
     std::atomic<uint64_t> bits; // 原子类型
@@ -103,12 +106,12 @@ class AtomicFloat
 // 这确保在所有线程都成功清除屏障之前，屏障的内存不会被释放。
 class Barrier
 {
-  public:
+public:
     Barrier(int count) : count(count) { CHECK_GT(count, 0); }
     ~Barrier() { CHECK_EQ(count, 0); }
     void Wait();
 
-  private:
+private:
     std::mutex mutex;
     std::condition_variable cv;
     int count;

@@ -53,6 +53,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     ProfilePhase p(Prof::ShapeIntersect);
     Float phi;
     Point3f pHit;
+    // Transform _Ray_ to object space
     // Ray变换到对象空间
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -66,6 +67,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat b = 2 * (dx * ox + dy * oy + dz * oz);
     EFloat c = ox * ox + oy * oy + oz * oz - EFloat(radius) * EFloat(radius);
 
+    // Solve quadratic equation for _t_ values
     // 求解二次方程，得到t
     EFloat t0, t1;
     if (!Quadratic(a, b, c, &t0, &t1))

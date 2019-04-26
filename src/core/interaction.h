@@ -48,9 +48,11 @@
 namespace pbrt
 {
 
+// Interaction Declarations
 // Interaction 声明
 struct Interaction
 {
+    // Interaction Public Methods
     // Interaction 公有方法
 
     // SurfaceInteraction部分
@@ -106,6 +108,7 @@ struct Interaction
         return mediumInterface.inside;
     }
 
+    // Interaction Public Data
     // Interaction 公有数据
     Point3f p;                       // 交点
     Float time;                      // 时间
@@ -118,6 +121,7 @@ struct Interaction
 class MediumInteraction : public Interaction
 {
 public:
+    // MediumInteraction Public Methods
     // MediumInteraction 公有方法
     MediumInteraction() : phase(nullptr) {}
     MediumInteraction(const Point3f &p, const Vector3f &wo, Float time,
@@ -125,14 +129,17 @@ public:
         : Interaction(p, wo, time, medium), phase(phase) {}
     bool IsValid() const { return phase != nullptr; }
 
+    // MediumInteraction Public Data
     // MediumInteraction 公有数据
     const PhaseFunction *phase;
 };
 
 // SurfaceInteraction Declarations
+// SurfaceInteraction Declarations
 class SurfaceInteraction : public Interaction
 {
 public:
+    // SurfaceInteraction Public Methods
     // SurfaceInteraction 公有方法
     SurfaceInteraction() {}
     SurfaceInteraction(const Point3f &p, const Vector3f &pError,
@@ -151,6 +158,7 @@ public:
     void ComputeDifferentials(const RayDifferential &r) const;
     Spectrum Le(const Vector3f &w) const;
 
+    // SurfaceInteraction Public Data
     // SurfaceInteraction 公有数据
     Point2f uv;                   // uv坐标
     Vector3f dpdu, dpdv;          // 偏导数

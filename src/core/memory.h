@@ -46,6 +46,7 @@
 namespace pbrt
 {
 
+// Memory Declarations
 // Memory 声明
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
 
@@ -65,7 +66,7 @@ class
 #endif // PBRT_HAVE_ALIGNAS
         MemoryArena
 {
-  public:
+public:
     // MemoryArena 公有方法
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}
     ~MemoryArena()
@@ -155,10 +156,11 @@ class
         return total;
     }
 
-  private:
+private:
     MemoryArena(const MemoryArena &) = delete;            // 删除拷贝构造函数
     MemoryArena &operator=(const MemoryArena &) = delete; // 删除赋值函数
 
+    // MemoryArena Private Data
     // MemoryArena 私有数据
     const size_t blockSize; // 块的数量
     size_t currentBlockPos = 0, currentAllocSize = 0;
@@ -169,7 +171,7 @@ class
 template <typename T, int logBlockSize>
 class BlockedArray
 {
-  public:
+public:
     // BlockedArray Public Methods
     BlockedArray(int uRes, int vRes, const T *d = nullptr)
         : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize)
@@ -221,7 +223,7 @@ class BlockedArray
                 *a++ = (*this)(u, v);
     }
 
-  private:
+private:
     // BlockedArray Private Data
     T *data;
     const int uRes, vRes, uBlocks;

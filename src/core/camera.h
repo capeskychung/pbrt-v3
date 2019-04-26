@@ -47,10 +47,12 @@
 namespace pbrt
 {
 
+// Camera Declarations
 // Camera 声明
 class Camera
 {
-  public:
+public:
+    // Camera Interface
     // Camera 接口
     Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
            Float shutterClose, Film *film, const Medium *medium);
@@ -64,6 +66,7 @@ class Camera
                                Vector3f *wi, Float *pdf, Point2f *pRaster,
                                VisibilityTester *vis) const;
 
+    // Camera Public Data
     // Camera 公有数据
     AnimatedTransform CameraToWorld;       // 相机坐标系到世界坐标系的变换矩阵
     const Float shutterOpen, shutterClose; // 快门
@@ -86,7 +89,7 @@ inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs)
 
 class ProjectiveCamera : public Camera
 {
-  public:
+public:
     // ProjectiveCamera Public Methods
     ProjectiveCamera(const AnimatedTransform &CameraToWorld,
                      const Transform &CameraToScreen,
@@ -112,7 +115,7 @@ class ProjectiveCamera : public Camera
         RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
     }
 
-  protected:
+protected:
     // ProjectiveCamera Protected Data
     Transform CameraToScreen, RasterToCamera;
     Transform ScreenToRaster, RasterToScreen;
