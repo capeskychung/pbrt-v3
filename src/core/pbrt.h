@@ -459,24 +459,35 @@ int FindInterval(int size, const Predicate &pred)
     return Clamp(first - 1, 0, size - 2);
 }
 
+// 线性插值
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
+// 求解一元二次方程
+// $ a*t^2 + b*t + c = 0 $
+// 其中 a,b,c 均为对应参数，t0和t1对应两个解
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1)
 {
     // Find quadratic discriminant
+    // 二次方程根的判别式，即 $ b^2 - 4ac $
+    // 大于0时，有两个解。
+    // 等于0时，有一个解。
     double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
+
+    // 判别式小于0时，没有解。
     if (discrim < 0)
         return false;
+    // 判别式开方，即 $ \sqrt{b^2 - 4ac} $
     double rootDiscrim = std::sqrt(discrim);
 
     // Compute quadratic _t_ values
+    // 求解
     double q;
     if (b < 0)
         q = -.5 * (b - rootDiscrim);
     else
         q = -.5 * (b + rootDiscrim);
     *t0 = q / a;
-    *t1 = c / q;
+    *t1 = c / q; // 韦达定理，$ t_0 * t_1 = c / a $
     if (*t0 > *t1)
         std::swap(*t0, *t1);
     return true;

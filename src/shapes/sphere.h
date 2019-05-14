@@ -62,9 +62,15 @@ public:
           thetaMax(std::acos(Clamp(std::max(zMin, zMax) / radius, -1, 1))),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
     Bounds3f ObjectBound() const;
+
+    // 求交，计算相交信息
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture) const;
+
+    // 求交，不计算相交信息
     bool IntersectP(const Ray &ray, bool testAlphaTexture) const;
+
+    // 表面积
     Float Area() const;
     Interaction Sample(const Point2f &u, Float *pdf) const;
     Interaction Sample(const Interaction &ref, const Point2f &u,

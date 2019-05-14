@@ -59,8 +59,23 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
 
     // Compute quadratic sphere coefficients
+    // 计算二次方程的系数
+    // 球面所有点满足方程：
+    //    $ x^2 + y^2 + z^2 = r^2 $
+    // 代入Ray的表达式：
+    //    $ (o_x + t*d_x)^2 + (o_y + t*d_y)^2 + (o_z + t*d_z)^2 = r^2 $
+    // 上式只有 _t_ 是未知的，所以是一个求 _t_ 的一元二次方程
+    // 将其变换为二次方程的一般形式:
+    //    $ a*t^2 + b*t + c = 0 $
+    // 其中:
+    //    $ a = d_x^2 + d_y^2 + d_z^2 $
+    //    $ b = 2(d_x * o_x + d_y * o_y + d_z * o_z) $
+    //    $ c = o_x^2 + o_y^2 + o_z^2 − r^2 $
+    // 接下来分别求参数 a,b,c
 
     // Initialize _EFloat_ ray coordinate values
+    // 使用 _EFloat_ 计算坐标值
+    // _EFloat_类似于Float，但可以追踪浮点数误差
     EFloat ox(ray.o.x, oErr.x), oy(ray.o.y, oErr.y), oz(ray.o.z, oErr.z);
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
     EFloat a = dx * dx + dy * dy + dz * dz;
@@ -74,6 +89,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
         return false;
 
     // Check quadric shape _t0_ and _t1_ for nearest intersection
+    // 找到最近的交点
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0)
         return false;
     EFloat tShapeHit = t0;
@@ -98,8 +114,8 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
 
     // Test sphere intersection against clipping parameters
     // 检查相交点是否处于裁剪区域
-    if ((zMin > -radius && pHit.z < zMin) || (zMax < radius && pHit.z > zMax) ||
-        phi > phiMax)
+    if ((zMin > -radius && pHit.z < zMin) ||
+        (zMax < radius && pHit.z > zMax) || phi > phiMax)
     {
         if (tShapeHit == t1)
             return false;
@@ -128,6 +144,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Float v = (theta - thetaMin) / (thetaMax - thetaMin);
 
     // Compute sphere $\dpdu$ and $\dpdv$
+    // 计算交点位置的偏导数
     Float zRadius = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
     Float invZRadius = 1 / zRadius;
     Float cosPhi = pHit.x * invZRadius;
@@ -138,6 +155,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
         Vector3f(pHit.z * cosPhi, pHit.z * sinPhi, -radius * std::sin(theta));
 
     // Compute sphere $\dndu$ and $\dndv$
+    // 计算交点法线的偏导数
     Vector3f d2Pduu = -phiMax * phiMax * Vector3f(pHit.x, pHit.y, 0);
     Vector3f d2Pduv =
         (thetaMax - thetaMin) * pHit.z * phiMax * Vector3f(-sinPhi, cosPhi, 0.);
@@ -172,6 +190,8 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
 
     // Update _tHit_ for quadric intersection
     // 更新交点对应的_tHit_
+    // 这里t不需要变换到世界空间，因为模型空间和世界空间下的t是相等的
+    // 但前提是上面的ray从世界空间转换到模型空间后，不能做归一化操作
     *tHit = (Float)tShapeHit;
     return true;
 }
@@ -247,7 +267,11 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const
     return true;
 }
 
-Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
+Float Sphere::Area() const
+{
+    // 微积分方法，曲线绕轴旋转得到曲面
+    return phiMax * radius * (zMax - zMin);
+}
 
 Interaction Sphere::Sample(const Point2f &u, Float *pdf) const
 {

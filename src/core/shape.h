@@ -69,8 +69,9 @@ public:
     {
         return Intersect(ray, nullptr, nullptr, testAlphaTexture);
     }
-    // 区域光源使用
+    // 求表面积，区域光源使用
     virtual Float Area() const = 0;
+
     // Sample a point on the surface of the shape and return the PDF with
     // respect to area on the surface.
     virtual Interaction Sample(const Point2f &u, Float *pdf) const = 0;
