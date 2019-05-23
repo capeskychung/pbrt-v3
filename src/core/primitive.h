@@ -67,25 +67,37 @@ class Primitive {
 class GeometricPrimitive : public Primitive {
   public:
     // GeometricPrimitive Public Methods
+    // GeometricPrimitive 公有方法
+
+    // 世界空间边界
     virtual Bounds3f WorldBound() const;
+    // 相交检测，计算交点信息
     virtual bool Intersect(const Ray &r, SurfaceInteraction *isect) const;
+    // 相交检测，不计算交点
     virtual bool IntersectP(const Ray &r) const;
+    // 构造函数
     GeometricPrimitive(const std::shared_ptr<Shape> &shape,
                        const std::shared_ptr<Material> &material,
                        const std::shared_ptr<AreaLight> &areaLight,
                        const MediumInterface &mediumInterface);
+    
+    // 区域光源指针
     const AreaLight *GetAreaLight() const;
+    // 材质指针
     const Material *GetMaterial() const;
+
+    // 计算散射
     void ComputeScatteringFunctions(SurfaceInteraction *isect,
                                     MemoryArena &arena, TransportMode mode,
                                     bool allowMultipleLobes) const;
 
   private:
     // GeometricPrimitive Private Data
-    std::shared_ptr<Shape> shape;
-    std::shared_ptr<Material> material;
-    std::shared_ptr<AreaLight> areaLight;
-    MediumInterface mediumInterface;
+    // GeometricPrimitive 私有数据
+    std::shared_ptr<Shape> shape; // 形状
+    std::shared_ptr<Material> material; // 材质
+    std::shared_ptr<AreaLight> areaLight; // 区域光源
+    MediumInterface mediumInterface; //
 };
 
 // TransformedPrimitive Declarations

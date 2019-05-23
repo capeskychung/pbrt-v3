@@ -235,7 +235,8 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Point3f p2t = p2 - Vector3f(ray.o);
 
     // Permute components of triangle vertices and ray direction
-    // 2.1.2. 排列
+    // 2.1.2. 排列，将x,y,z中最大的分量，映射到z。保证z分量不为0。
+    // 另外两个分量按顺序递增映射，例如，最大分量为x，则x->z, y->x, z->y
     int kz = MaxDimension(Abs(ray.d));
     int kx = kz + 1;
     if (kx == 3)
@@ -249,7 +250,8 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     p2t = Permute(p2t, kx, ky, kz);
 
     // Apply shear transformation to translated vertex positions
-    // 2.1.3. 剪切
+    // 2.1.3. 错切变换，类似于矩形变换为平行四边形。这里将射线的x，y分量变为0，z分量缩放为1。射线就是z轴的单位向量。
+    // 三角形作同样的变换后，只需要检测z轴与三角形相交即可，转化为2D问题。
     Float Sx = -d.x / d.z;
     Float Sy = -d.y / d.z;
     Float Sz = 1.f / d.z;
@@ -261,13 +263,14 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     p2t.y += Sy * p2t.z;
 
     // Compute edge function coefficients _e0_, _e1_, and _e2_
-    // 2.2.
+    // 2.2. 计算边的系数。只考虑x,y坐标构成的投影平面，用检测原点是否在每条边的同一侧，来检测原点是否在三角形内部
     Float e0 = p1t.x * p2t.y - p1t.y * p2t.x;
     Float e1 = p2t.x * p0t.y - p2t.y * p0t.x;
     Float e2 = p0t.x * p1t.y - p0t.y * p1t.x;
 
     // Fall back to double precision test at triangle edges
-    // 2.3.
+    // 2.3. 如果是单精度，且三个系数都为零，则用双精度重新计算。
+    // 原因是如果三角形太小，单精度计算出的系数可能为0。
     if (sizeof(Float) == sizeof(float) &&
         (e0 == 0.0f || e1 == 0.0f || e2 == 0.0f))
     {
@@ -283,7 +286,8 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     }
 
     // Perform triangle edge and determinant tests
-    // 2.4. 
+    // 2.4. 如果三个系数有正有负，表示原点不在三条边同一侧，原点在三角形之外。
+    // 如果三个系数和为0，代表三角形投影面积接近0，射线几乎与三角形平行，不算相交（对于密铺三角网格，射线会到达另外的三角形）。
     if ((e0 < 0 || e1 < 0 || e2 < 0) && (e0 > 0 || e1 > 0 || e2 > 0))
         return false;
     Float det = e0 + e1 + e2;
@@ -291,7 +295,11 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         return false;
 
     // Compute scaled hit distance to triangle and test against ray $t$ range
-    // 2.5. 
+    // 2.5. 计算射线到相交点的距离，即射线的系数t。
+    // 三角形的顶点z分量按之前射线z分量同比例缩放。因为射线是单位向量，所以射线与三角形交点的z分量就是射线的系数t.
+    // e0,e1,e2分别除以det后可以作为三个顶点的插值权重，它们的和为1，
+    // 这里没有除，而是直接用作插值权重，所以计算出来的tScaled等于t*det。所以判断tScaled是否合法时，采用了ray.tMax * det。
+    // 之所以没有除，是因为或许t不在合法范围内，有提前退出的机会，不在除法上浪费性能。
     p0t.z *= Sz;
     p1t.z *= Sz;
     p2t.z *= Sz;
@@ -302,7 +310,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         return false;
 
     // Compute barycentric coordinates and $t$ value for triangle intersection
-    // 2.6. 
+    // 2.6.计算质心坐标（插值权重）和系数t。这里才真正使用除法算出实际的插值权重和t。
     Float invDet = 1 / det;
     Float b0 = e0 * invDet;
     Float b1 = e1 * invDet;
@@ -335,6 +343,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         return false;
 
     // Compute triangle partial derivatives
+    // 3. 计算偏导数
     Vector3f dpdu, dpdv;
     Point2f uv[3];
     GetUVs(uv);
@@ -363,6 +372,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     }
 
     // Compute error bounds for triangle intersection
+    // 4.
     Float xAbsSum =
         (std::abs(b0 * p0.x) + std::abs(b1 * p1.x) + std::abs(b2 * p2.x));
     Float yAbsSum =
@@ -372,23 +382,26 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Vector3f pError = gamma(7) * Vector3f(xAbsSum, yAbsSum, zAbsSum);
 
     // Interpolate $(u,v)$ parametric coordinates and hit point
+    // 5.
     Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;
     Point2f uvHit = b0 * uv[0] + b1 * uv[1] + b2 * uv[2];
 
     // Test intersection against alpha texture, if present
+    // 6.
     if (testAlphaTexture && mesh->alphaMask)
     {
         SurfaceInteraction isectLocal(pHit, Vector3f(0, 0, 0), uvHit, -ray.d,
-                                      dpdu, dpdv, Normal3f(0, 0, 0),
-                                      Normal3f(0, 0, 0), ray.time, this);
+                                      dpdu, dpdv, Normal3f(0, 0, 0), Normal3f(0, 0, 0),
+                                      ray.time, this);
         if (mesh->alphaMask->Evaluate(isectLocal) == 0)
             return false;
     }
 
     // Fill in _SurfaceInteraction_ from triangle hit
-    *isect = SurfaceInteraction(pHit, pError, uvHit, -ray.d, dpdu, dpdv,
-                                Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time,
-                                this, faceIndex);
+    // 7.
+    *isect = SurfaceInteraction(pHit, pError, uvHit, -ray.d,
+                                dpdu, dpdv, Normal3f(0, 0, 0), Normal3f(0, 0, 0),
+                                ray.time, this, faceIndex);
 
     // Override surface normal in _isect_ for triangle
     isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
